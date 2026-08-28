@@ -21,9 +21,10 @@ There is intentionally no Expo application yet.
 
 ## Phase 0 status
 
-The engineering guardrails and normalized scope are defined. Phase 0 is ready
-for owner scope approval. Qualified clinical review is required before Restore
-is used as a daily-use build, but is not required to begin Phase 1 engineering.
+Phase 0 was approved and completed on 28 August 2026. Restore is ready for the
+Phase 1 identity gate and application bootstrap. Qualified clinical review is
+required before Restore is used as a daily-use build, but does not block Phase 1
+engineering.
 
 ## Command contract
 

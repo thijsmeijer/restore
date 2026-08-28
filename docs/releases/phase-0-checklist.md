@@ -5,7 +5,7 @@
 - [x] Canonical roadmap is stored in the repository.
 - [x] First-release capabilities and explicit deferrals are normalized.
 - [x] Roadmap priority/phase conflicts are resolved in an authoritative record.
-- [ ] Owner changes the first-release scope status to `Approved`.
+- [x] Owner approved the first-release scope on 28 August 2026.
 
 ## Safety and content
 
@@ -32,7 +32,9 @@
 - [x] Phase 1 bootstrap outcome, exclusions, command contract, and exit evidence
   are documented.
 - [x] Documentation links and stable identifiers pass repository checks.
-- [ ] Phase 0 documentation has owner approval.
+- [x] Phase 0 documentation was approved on 28 August 2026.
 
-Phase 0 is complete when the two owner-approval boxes are checked. Qualified
-clinical review is tracked separately as a prerequisite for a daily-use build.
+**Phase 0 completed:** 28 August 2026.
+
+Qualified clinical review is tracked separately as a prerequisite for a
+daily-use build.

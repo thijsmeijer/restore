@@ -1,9 +1,10 @@
 # Restore first-release scope
 
-**Status:** Awaiting owner approval  
-**Decision date:** 28 August 2026  
-**Authority:** This document resolves first-release conflicts in the product
-roadmap. It does not remove later backlog items.
+- **Status:** Approved
+- **Decision date:** 28 August 2026
+- **Approved by:** Thijs, 28 August 2026
+- **Authority:** This document resolves first-release conflicts in the product
+  roadmap. It does not remove later backlog items.
 
 ## Release outcome
 
@@ -85,6 +86,6 @@ These decisions supersede contradictory labels elsewhere in the roadmap:
 
 ## Approval gate
 
-Phase 0 scope is frozen only when the owner changes this document’s status to
-`Approved`. Later changes require a dated decision entry explaining the reason,
-affected stories, migration or compatibility impact, and release impact.
+Phase 0 scope was approved by the owner on 28 August 2026 and is now frozen.
+Later changes require a dated decision entry explaining the reason, affected
+stories, migration or compatibility impact, and release impact.
