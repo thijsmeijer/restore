@@ -1,6 +1,6 @@
 # ADR 0005: iPhone identity and distribution
 
-- **Status:** Accepted with deferred bundle identifier
+- **Status:** Accepted
 - **Date:** 2026-08-28
 
 ## Context
@@ -18,11 +18,13 @@ Use EAS development builds connected to Metro during active development and EAS
 internal preview distribution for daily personal use. TestFlight is optional;
 public App Store distribution is not P0.
 
-The permanent bundle identifier and URL scheme are deliberately selected in a
-small identity gate immediately before Phase 1 project creation. They must be
-recorded once in the app configuration and this ADR before the first signed
-build. `nl.thijs.restore` and `restore` remain recommendations, not accepted
-identifiers.
+The permanent iOS bundle identifier is `com.restore.mobility` and the URL scheme
+is `restore`. Both must be used consistently in app configuration and signed
+builds. Apple Developer enrollment has been paid and is pending activation;
+local Phase 1 work may continue, while device registration and signed iOS builds
+remain blocked until activation. Bundle-ID availability is confirmed when it is
+first registered with Apple; if Apple rejects it as unavailable, this decision
+must be reopened before any signed build exists.
 
 Do not declare or request HealthKit, camera, microphone, notification, or Face
 ID permissions until the corresponding feature exists. Notification permission
@@ -42,4 +44,5 @@ is first eligible in Phase 10.
 - **Public App Store first:** unnecessary scope for a single personal device.
 - **TestFlight as the only daily route:** builds expire and add avoidable release
   administration.
-- **Bundle identifier now:** explicitly deferred by the owner until Phase 1.
+- **`nl.thijs.restore`:** not selected; the owner chose
+  `com.restore.mobility` during the Phase 1 identity gate.

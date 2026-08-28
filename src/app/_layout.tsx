@@ -1,0 +1,38 @@
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import { useColorScheme } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+
+import { AppErrorBoundary } from '@/components/app-error-boundary';
+import { colorTokens } from '@/design-system/tokens';
+
+export default function RootLayout() {
+  const scheme = useColorScheme() === 'dark' ? 'dark' : 'light';
+  const colors = colorTokens[scheme];
+  const navigationTheme = scheme === 'dark' ? DarkTheme : DefaultTheme;
+
+  return (
+    <AppErrorBoundary>
+      <SafeAreaProvider>
+        <ThemeProvider
+          value={{
+            ...navigationTheme,
+            colors: {
+              ...navigationTheme.colors,
+              background: colors.background,
+              card: colors.surface,
+              primary: colors.accent,
+              text: colors.text,
+              border: colors.border,
+            },
+          }}
+        >
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(tabs)" />
+          </Stack>
+          <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
+        </ThemeProvider>
+      </SafeAreaProvider>
+    </AppErrorBoundary>
+  );
+}

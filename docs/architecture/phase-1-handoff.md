@@ -1,20 +1,23 @@
 # Phase 1 handoff: repository and app shell
 
+**Progress:** Local BOOT-001 implementation complete on 28 August 2026; DX-001
+CI and external EAS/iPhone gates remain.
+
 Phase 1 may start only after the owner approves the first-release scope. Clinical
 review remains a daily-use release gate and does not block application bootstrap.
 
-## Pre-bootstrap identity gate
+## Pre-bootstrap identity gate — complete
 
-Before running a project generator, record in ADR 0005:
+The owner selected and recorded in ADR 0005:
 
-- Permanent iOS bundle identifier.
-- Permanent URL scheme.
-- Apple Developer and Expo account readiness.
-- Whether the first physical-device build uses the recommended internal EAS
-  distribution.
+- Permanent iOS bundle identifier: `com.restore.mobility`.
+- Permanent URL scheme: `restore`.
+- First physical-device distribution: EAS internal development build.
+- Apple Developer status: paid enrollment pending activation.
 
-The working display name is already `Restore` and the first release is
-iPhone-only.
+The working display name is `Restore` and the first release is iPhone-only.
+Expo account login must be confirmed before linking the project or starting an
+EAS build; it does not block the local bootstrap.
 
 ## BOOT-001 outcome
 

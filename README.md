@@ -3,8 +3,8 @@
 Restore is a local-first personal iPhone app that answers “What does my body
 need today?” with a safe, deterministic, guided mobility session.
 
-The repository is currently at **Phase 0: product definition and guardrails**.
-There is intentionally no Expo application yet.
+Phase 0 is complete. The repository now contains the **Phase 1 Expo application
+shell** and its approved product and engineering guardrails.
 
 ## Canonical documentation
 
@@ -17,6 +17,9 @@ There is intentionally no Expo application yet.
 - [P0 data definitions](docs/architecture/data-definitions.md)
 - [Architecture decisions](docs/architecture/adr/)
 - [Phase 1 handoff](docs/architecture/phase-1-handoff.md)
+- [Development setup](docs/development/setup.md)
+- [Dependency decisions](docs/development/dependencies.md)
+- [Phase 1 checklist](docs/releases/phase-1-checklist.md)
 - [Repository instructions](AGENTS.md)
 
 ## Phase 0 status
@@ -26,18 +29,28 @@ Phase 1 identity gate and application bootstrap. Qualified clinical review is
 required before Restore is used as a daily-use build, but does not block Phase 1
 engineering.
 
-## Command contract
+## Development
 
-Phase 1 must implement these commands before feature work starts:
+Install and verify the pinned foundation:
 
 ```bash
-pnpm install
-pnpm lint
-pnpm typecheck
-pnpm test
-pnpm content:validate
+corepack enable pnpm
+pnpm install --frozen-lockfile
+pnpm doctor
 pnpm verify
 ```
 
-Until the application shell exists, Phase 0 validation is document review and
-repository consistency checking only.
+Individual checks are available as:
+
+```bash
+pnpm lint
+pnpm format:check
+pnpm typecheck
+pnpm test
+pnpm content:validate
+pnpm build:check
+```
+
+Start Metro for the development client with `pnpm start`. The local BOOT-001
+foundation is complete; EAS login/project linking and the signed iPhone build
+remain pending until the required accounts are ready.
