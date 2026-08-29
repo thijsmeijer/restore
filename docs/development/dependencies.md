@@ -13,6 +13,7 @@
 | Gesture Handler, Reanimated, and Worklets | Expo Router/native-navigation peer foundation pinned to the SDK 57 template versions | Leaving these implicit allowed pnpm to select incompatible peer versions |
 | Expo Dev Client | Native-capable development build | Expo Go cannot represent the eventual native dependency set |
 | Expo SQLite | Durable, transactional, offline device storage required by ADR 0002 and DB-001 | React Native has no platform SQLite API; key/value or file storage cannot provide the required relational constraints, migrations, transactions, and recovery behavior |
+| Zod | Versioned runtime validation for content, imports, and future durable JSON snapshots | TypeScript types disappear at runtime; handwritten validators would duplicate the wire contract and make path-specific failures harder to keep complete |
 
 No analytics, database, form, state-management, media, notification, HealthKit,
 AI, or backend dependency is added in BOOT-001.
@@ -27,6 +28,7 @@ AI, or backend dependency is added in BOOT-001.
 | Jest and jest-expo | Expo-compatible unit/component runner | Native-only testing is too slow for the base feedback loop |
 | React Native Testing Library | Accessibility-oriented component tests for React 19 | Deprecated react-test-renderer is unsupported for React 19 |
 | Node 24 type definitions | Strictly type the Node 24 real-SQL migration test adapter | Untyped imports or disabling test type-checking would weaken the repository contract; a second SQLite package would duplicate the platform capability |
+| tsx | Execute the same strict TypeScript content validator locally and in CI | Duplicating schemas in JavaScript risks drift; Node type stripping is not consistently available across the repository minimum Node versions |
 
 Licenses and exact transitive versions are captured in `pnpm-lock.yaml`. Native
 runtime additions require a new binary and must be documented here.
@@ -48,6 +50,21 @@ interfaces. Drizzle remains a valid later replacement if the domain schema
 makes generated queries materially useful. Removal requires replacing the
 adapter while preserving the on-device database, migration checksums, repository
 contracts, and released-schema fixtures; it must never reset owner data.
+
+### CONTENT-001 validation decision
+
+`zod@4.5.4` is pinned as an MIT-licensed runtime dependency. It performs local,
+deterministic validation and adds no native code, network behavior, storage,
+analytics, permission, or entitlement. Schemas are shared by CI and the future
+on-device import/content pipeline, so invalid data cannot pass a weaker CLI-only
+check. The published package is approximately 5.8 MB unpacked, but CONTENT-001
+does not import it from an application route, so the current iOS bundle does not
+include it. Future on-device validation will add the reachable, tree-shaken
+schema code. `tsx@4.23.12` is a development-only MIT-licensed runner of roughly
+0.5 MB unpacked plus its build-time transform dependency; it is not included in
+the iOS bundle. Removing either dependency requires a replacement that preserves
+the versioned wire schemas, strict unknown-field behavior, stable issue codes
+and paths, and identical local/on-device validation.
 
 ## Known transitive advisory
 

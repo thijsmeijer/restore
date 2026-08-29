@@ -17,7 +17,7 @@
     "typecheck": "tsc --noEmit",
     "test": "jest --runInBand",
     "test:watch": "jest --watch",
-    "content:validate": "node scripts/validate-content.mjs",
+    "content:validate": "tsx scripts/validate-content.ts",
     "doctor": "node scripts/doctor.mjs",
     "build:check": "expo export --platform ios --output-dir dist",
     "verify": "pnpm run doctor && pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm content:validate && pnpm build:check"
@@ -40,7 +40,8 @@
     "react-native-reanimated": "4.5.1",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",
-    "react-native-worklets": "0.10.1"
+    "react-native-worklets": "0.10.1",
+    "zod": "4.5.4"
   },
   "devDependencies": {
     "@react-native/metro-config": "0.86.3",
@@ -53,6 +54,7 @@
     "jest": "~29.7.0",
     "jest-expo": "~57.0.5",
     "prettier": "^3.9.6",
+    "tsx": "4.23.12",
     "typescript": "~6.0.3"
   }
 }
