@@ -30,6 +30,12 @@ Do not declare or request HealthKit, camera, microphone, notification, or Face
 ID permissions until the corresponding feature exists. Notification permission
 is first eligible in Phase 10.
 
+Declare `ITSAppUsesNonExemptEncryption` as `false` for the current application
+and dependency set: Restore implements no proprietary or non-exempt
+cryptography. Reassess this declaration before adding any dependency or native
+capability that implements encryption rather than relying on exempt platform
+facilities.
+
 ## Consequences
 
 - Physical-iPhone validation begins in Phase 1, not at the end of the project.
