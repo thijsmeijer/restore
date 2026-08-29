@@ -12,6 +12,7 @@
 | React Native Safe Area Context and Screens | Safe layout and native navigation primitives | Required by the Expo Router navigation stack |
 | Gesture Handler, Reanimated, and Worklets | Expo Router/native-navigation peer foundation pinned to the SDK 57 template versions | Leaving these implicit allowed pnpm to select incompatible peer versions |
 | Expo Dev Client | Native-capable development build | Expo Go cannot represent the eventual native dependency set |
+| Expo SQLite | Durable, transactional, offline device storage required by ADR 0002 and DB-001 | React Native has no platform SQLite API; key/value or file storage cannot provide the required relational constraints, migrations, transactions, and recovery behavior |
 
 No analytics, database, form, state-management, media, notification, HealthKit,
 AI, or backend dependency is added in BOOT-001.
@@ -25,9 +26,28 @@ AI, or backend dependency is added in BOOT-001.
 | Prettier | Deterministic formatting check | Hand formatting is not reproducible |
 | Jest and jest-expo | Expo-compatible unit/component runner | Native-only testing is too slow for the base feedback loop |
 | React Native Testing Library | Accessibility-oriented component tests for React 19 | Deprecated react-test-renderer is unsupported for React 19 |
+| Node 24 type definitions | Strictly type the Node 24 real-SQL migration test adapter | Untyped imports or disabling test type-checking would weaken the repository contract; a second SQLite package would duplicate the platform capability |
 
 Licenses and exact transitive versions are captured in `pnpm-lock.yaml`. Native
 runtime additions require a new binary and must be documented here.
+
+### DB-001 persistence decision
+
+`expo-sqlite` is pinned to the Expo SDK-compatible `~57.0.2` release. It stores
+data only in Restore's local application container, adds no network behavior,
+analytics, account, permission, or entitlement, and contributes the native
+SQLite adapter already maintained for Expo. Its native code increases the
+binary and requires rebuilding the development client.
+
+Restore owns a small typed migration layer instead of adding Drizzle ORM in
+DB-001. The first migration contains lifecycle tables only, so an ORM and its
+schema-generation tool would add maintenance, build-time, bundle, and licensing
+surface without yet improving a domain repository. Direct `expo-sqlite` access
+is confined to the database adapter; application code uses repository
+interfaces. Drizzle remains a valid later replacement if the domain schema
+makes generated queries materially useful. Removal requires replacing the
+adapter while preserving the on-device database, migration checksums, repository
+contracts, and released-schema fixtures; it must never reset owner data.
 
 ## Known transitive advisory
 
