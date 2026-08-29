@@ -39,6 +39,9 @@ jobs:
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
 
+      - name: Install EAS CLI
+        run: pnpm add --global eas-cli@18.3.0
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 

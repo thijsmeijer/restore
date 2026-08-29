@@ -12,10 +12,11 @@ The workflow runs for:
 - pull requests targeting `main`; and
 - explicit manual dispatches.
 
-It uses Ubuntu 24.04, Node 24.14.0, and pnpm 10.33.2. Dependencies are installed
-with `--frozen-lockfile`, and the pnpm store is cached from `pnpm-lock.yaml`.
-Concurrent runs for the same workflow/ref are cancelled so obsolete commits do
-not consume unnecessary runner time.
+It uses Ubuntu 24.04, Node 24.14.0, pnpm 10.33.2, and the pinned EAS CLI 18.3.0
+required by the repository environment doctor. Project dependencies are
+installed with `--frozen-lockfile`, and the pnpm store is cached from
+`pnpm-lock.yaml`. Concurrent runs for the same workflow/ref are cancelled so
+obsolete commits do not consume unnecessary runner time.
 
 Third-party actions are pinned to immutable release commit SHAs. The workflow
 token has only `contents: read`; it receives no write permission, deployment
