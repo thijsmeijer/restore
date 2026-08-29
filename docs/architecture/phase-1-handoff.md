@@ -1,7 +1,7 @@
 # Phase 1 handoff: repository and app shell
 
-**Progress:** Local BOOT-001 implementation and DX-001 GitHub CI are complete;
-external EAS/iPhone gates remain.
+**Progress:** Local BOOT-001 implementation, DX-001 GitHub CI, and EAS project
+linking are complete; physical-iPhone registration and build gates remain.
 
 Phase 1 may start only after the owner approves the first-release scope. Clinical
 review remains a daily-use release gate and does not block application bootstrap.
@@ -16,8 +16,7 @@ The owner selected and recorded in ADR 0005:
 - Apple Developer status: paid enrollment activated on 29 August 2026.
 
 The working display name is `Restore` and the first release is iPhone-only.
-Expo account login must be confirmed before linking the project or starting an
-EAS build; it does not block the local bootstrap.
+The EAS project is linked at `@prescient/restore-mobility`.
 
 ## BOOT-001 outcome
 

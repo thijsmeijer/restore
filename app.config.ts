@@ -33,6 +33,11 @@ const config: ExpoConfig = {
     typedRoutes: true,
     reactCompiler: true,
   },
+  extra: {
+    eas: {
+      projectId: '4debbc09-607d-4408-b30c-f0485273853a',
+    },
+  },
   runtimeVersion: {
     policy: 'appVersion',
   },

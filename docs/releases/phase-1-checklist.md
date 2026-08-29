@@ -33,7 +33,7 @@
 
 ## External/device gates
 
-- [ ] Expo account login confirmed and EAS project linked.
+- [x] Expo account login confirmed and EAS project linked.
 - [x] Apple Developer paid enrollment activated.
 - [ ] Personal iPhone registered for internal distribution.
 - [ ] Development build installed and opened on the physical iPhone.
