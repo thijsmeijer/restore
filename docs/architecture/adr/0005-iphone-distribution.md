@@ -20,11 +20,11 @@ public App Store distribution is not P0.
 
 The permanent iOS bundle identifier is `com.restore.mobility` and the URL scheme
 is `restore`. Both must be used consistently in app configuration and signed
-builds. Apple Developer enrollment has been paid and is pending activation;
-local Phase 1 work may continue, while device registration and signed iOS builds
-remain blocked until activation. Bundle-ID availability is confirmed when it is
-first registered with Apple; if Apple rejects it as unavailable, this decision
-must be reopened before any signed build exists.
+builds. Apple Developer enrollment was activated on 29 August 2026. Device
+registration and signed iOS builds now depend on Expo project linking and Apple
+signing setup. Bundle-ID availability is confirmed when it is first registered
+with Apple; if Apple rejects it as unavailable, this decision must be reopened
+before any signed build exists.
 
 Do not declare or request HealthKit, camera, microphone, notification, or Face
 ID permissions until the corresponding feature exists. Notification permission

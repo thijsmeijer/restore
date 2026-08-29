@@ -29,14 +29,14 @@
 - [x] iOS JavaScript/Hermes export succeeds.
 - [x] Production dependency audit reviewed; one documented moderate Expo
   build-tool transitive advisory remains.
-- [ ] CI provider selected and DX-001 pipeline added.
+- [x] GitHub selected and the DX-001 verification pipeline passes.
 
 ## External/device gates
 
 - [ ] Expo account login confirmed and EAS project linked.
-- [ ] Apple Developer paid enrollment activated.
+- [x] Apple Developer paid enrollment activated.
 - [ ] Personal iPhone registered for internal distribution.
 - [ ] Development build installed and opened on the physical iPhone.
 
-The local BOOT-001 implementation is complete. Phase 1 exits after DX-001 and
-the physical-device gates are complete.
+The local BOOT-001 implementation and DX-001 CI are complete. Phase 1 exits
+after the remaining Expo and physical-device gates are complete.
