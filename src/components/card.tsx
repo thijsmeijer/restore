@@ -9,7 +9,6 @@ export function Card({ children }: PropsWithChildren) {
 
   return (
     <View
-      accessibilityRole="summary"
       style={[
         styles.card,
         { backgroundColor: colors.surface, borderColor: colors.border },

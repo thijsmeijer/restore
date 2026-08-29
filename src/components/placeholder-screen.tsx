@@ -1,8 +1,9 @@
 import { StyleSheet, Text, View } from 'react-native';
 
+import { Badge } from '@/components/badge';
 import { Card } from '@/components/card';
 import { Screen } from '@/components/screen';
-import { radius, spacing, typography } from '@/design-system/tokens';
+import { spacing, typography } from '@/design-system/tokens';
 import { useRestoreTheme } from '@/design-system/use-theme';
 
 type PlaceholderScreenProps = {
@@ -21,14 +22,7 @@ export function PlaceholderScreen({
   return (
     <Screen testID={`${title.toLowerCase()}-screen`}>
       <View style={styles.heading}>
-        <View
-          accessibilityLabel="Phase 1 application shell"
-          style={[styles.badge, { backgroundColor: colors.surfaceMuted }]}
-        >
-          <Text style={[styles.badgeText, { color: colors.textMuted }]}>
-            {eyebrow}
-          </Text>
-        </View>
+        <Badge accessibilityLabel="Phase 1 application shell" label={eyebrow} />
         <Text
           accessibilityRole="header"
           style={[styles.title, { color: colors.text }]}
@@ -53,17 +47,6 @@ const styles = StyleSheet.create({
   heading: {
     gap: spacing.sm,
     paddingTop: spacing.lg,
-  },
-  badge: {
-    alignSelf: 'flex-start',
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-  },
-  badgeText: {
-    fontSize: typography.caption,
-    fontWeight: '700',
-    textTransform: 'uppercase',
   },
   title: {
     fontSize: typography.display,
