@@ -36,7 +36,9 @@
 - [x] Expo account login confirmed and EAS project linked.
 - [x] Apple Developer paid enrollment activated.
 - [x] Personal iPhone registered for internal distribution.
-- [ ] Development build installed and opened on the physical iPhone.
+- [x] Development build installed and opened on the physical iPhone.
 
-The local BOOT-001 implementation and DX-001 CI are complete. Phase 1 exits
-after the remaining Expo and physical-device gates are complete.
+Phase 1 completed on 30 August 2026. Development build
+`4b5ac10a-8cc8-4fa9-8aea-bff3c4937bb5`, created from commit `7228746`, was
+installed and opened on the registered iPhone. The internal preview build for
+daily standalone use remains a RELEASE-001 gate.
