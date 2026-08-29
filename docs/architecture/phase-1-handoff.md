@@ -1,8 +1,8 @@
 # Phase 1 handoff: repository and app shell
 
-**Progress:** Local BOOT-001 implementation, DX-001 GitHub CI, and EAS project
-linking are complete; the registered physical iPhone still needs its first
-signed development build.
+**Progress:** Complete on 30 August 2026. Local BOOT-001, DX-001 GitHub CI, EAS
+project linking, Apple signing, and the first registered-iPhone development
+build all passed their exit gates.
 
 Phase 1 may start only after the owner approves the first-release scope. Clinical
 review remains a daily-use release gate and does not block application bootstrap.
@@ -68,3 +68,8 @@ installing them silently.
 - The clean commit builds reproducibly.
 - The app opens on the physical iPhone.
 - No P0 safety/domain rules have been moved into platform-specific UI code.
+
+The verified EAS development build has ID
+`4b5ac10a-8cc8-4fa9-8aea-bff3c4937bb5`, app version `0.1.0`, build number `1`,
+and source commit `7228746`. The owner installed it on the registered iPhone and
+confirmed that the app shell opened and worked on 30 August 2026.
