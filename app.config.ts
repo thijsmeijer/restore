@@ -13,6 +13,9 @@ const config: ExpoConfig = {
     bundleIdentifier: 'com.restore.mobility',
     supportsTablet: false,
     icon: './assets/expo.icon',
+    infoPlist: {
+      ITSAppUsesNonExemptEncryption: false,
+    },
   },
   plugins: [
     'expo-router',

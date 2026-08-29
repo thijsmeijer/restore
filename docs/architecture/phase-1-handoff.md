@@ -1,7 +1,8 @@
 # Phase 1 handoff: repository and app shell
 
 **Progress:** Local BOOT-001 implementation, DX-001 GitHub CI, and EAS project
-linking are complete; physical-iPhone registration and build gates remain.
+linking are complete; the registered physical iPhone still needs its first
+signed development build.
 
 Phase 1 may start only after the owner approves the first-release scope. Clinical
 review remains a daily-use release gate and does not block application bootstrap.
