@@ -35,10 +35,10 @@ normal development target is an EAS development client.
 - Bundle identifier: `com.restore.mobility`.
 - URL scheme: `restore`.
 - Apple Developer enrollment: active as of 29 August 2026.
-- Expo login: confirm with `eas whoami` before linking or building.
+- Expo project: `@prescient/restore-mobility`, linked on 29 August 2026.
 
-The remaining signed-build prerequisites are Expo login/project linking and
-registration of the physical iPhone.
+The remaining signed-build prerequisite is registration of the physical iPhone
+and completion of the first Apple signing setup.
 
 For the first signed development build:
 
