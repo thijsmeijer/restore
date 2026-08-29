@@ -19,6 +19,7 @@ shell** and its approved product and engineering guardrails.
 - [Phase 1 handoff](docs/architecture/phase-1-handoff.md)
 - [Development setup](docs/development/setup.md)
 - [Dependency decisions](docs/development/dependencies.md)
+- [GitHub CI](docs/development/ci.md)
 - [Phase 1 checklist](docs/releases/phase-1-checklist.md)
 - [Repository instructions](AGENTS.md)
 

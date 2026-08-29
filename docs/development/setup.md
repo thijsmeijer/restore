@@ -65,3 +65,9 @@ pnpm verify
 ```
 
 The Phase 1 content manifest is intentionally empty and `draft`.
+
+## GitHub workflow
+
+GitHub Actions runs the same `pnpm verify` command for pushes and pull requests
+to `main`. See [`ci.md`](./ci.md) for permissions, pinned actions, pull-request
+expectations, and the recommended branch ruleset.
