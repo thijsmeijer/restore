@@ -128,6 +128,48 @@ Content is rejected for:
 Validation reports JSON-path-like locations and stable error codes. Phase 2’s
 `pnpm content:validate` command must be deterministic and CI-failing.
 
+## CONTENT-001 schema-version 1 decisions
+
+The initial source catalog is split into reviewable JSON files:
+
+- `manifest.json` owns the version envelope, exercises, and the currently empty
+  routine-template list;
+- `body-regions.json` owns body-region reference records;
+- `equipment.json` owns equipment reference records;
+- `modes.json` owns the known session-mode slugs used for cross-reference
+  validation;
+- `localization-keys.json` owns resolvable user-facing text keys; and
+- `media-assets.json` owns resolvable local media paths.
+
+All objects reject unknown fields. Identifiers are UUIDs or canonical Crockford
+ULIDs; slugs are lowercase snake case; timestamps are UTC ISO-8601 values; and
+content versions use semantic versioning. Reference records carry their content
+version so a mixed-version catalog fails closed.
+
+Schema version 1 uses these bounded wire values where the Phase 0 contract gave
+categories but not spellings:
+
+- exercise side mode: `unilateral`, `bilateral_simultaneous`,
+  `bilateral_sequential`, `central`;
+- effect side: `central`, `left`, `right`, `bilateral`;
+- position: `standing`, `seated`, `kneeling`, `half_kneeling`, `quadruped`,
+  `supine`, `prone`, `side_lying`, `hanging`, `supported`;
+- space: `minimal`, `small`, `medium`, `large`;
+- setup cost: `low`, `medium`, `high`;
+- relation version policy: `pinned` or `compatible`; and
+- demand flags: `weight_bearing`, `balance`, `end_range`, `neck_position`,
+  `wrist_extension`, `shoulder_extension`, `spinal_flexion`,
+  `spinal_extension`, `equipment_stability`.
+
+Equipment categories and symptom-quality values remain stable snake-case
+identifiers because their complete P0 catalogs are owned by CONTENT-002 and
+SAFE-001 respectively. The validator still rejects duplicates and cross-record
+references not present in the supplied catalogs.
+
+Routine-template records are rejected until their dedicated schema is
+implemented. This prevents an unvalidated template from entering a pack while
+keeping CONTENT-001 limited to exercise, body-region, and equipment contracts.
+
 ## Minimal illustrative record
 
 ```json
