@@ -18,9 +18,10 @@
     "test": "jest --runInBand",
     "test:watch": "jest --watch",
     "content:validate": "tsx scripts/validate-content.ts",
+    "generator:scenarios": "tsx scripts/simulate-generator.ts",
     "doctor": "node scripts/doctor.mjs",
     "build:check": "expo export --platform ios --output-dir dist",
-    "verify": "pnpm run doctor && pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm content:validate && pnpm build:check"
+    "verify": "pnpm run doctor && pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm content:validate && pnpm generator:scenarios && pnpm build:check"
   },
   "dependencies": {
     "expo": "~57.0.18",
