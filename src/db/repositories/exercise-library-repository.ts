@@ -12,9 +12,11 @@ import type {
 interface ExerciseRow {
   readonly content_version: string;
   readonly payload_json: string;
-  readonly favorite: number | null;
-  readonly avoid_state: ExerciseAvoidState | null;
-  readonly avoid_until: string | null;
+  readonly state_id: string | null;
+  readonly state_favorite: number | null;
+  readonly state_avoid_state: ExerciseAvoidState | null;
+  readonly state_avoid_until: string | null;
+  readonly legacy_preference: 'favorite' | 'avoided' | null;
 }
 
 interface IdRow {
@@ -32,6 +34,16 @@ interface PreferenceRow {
   readonly avoid_state: ExerciseAvoidState;
   readonly avoid_until: string | null;
   readonly created_at: string;
+}
+
+interface LegacyPreferenceRow {
+  readonly preference: 'favorite' | 'avoided';
+}
+
+interface EffectivePreference {
+  readonly favorite: boolean;
+  readonly avoidState: ExerciseAvoidState;
+  readonly avoidUntil: string | null;
 }
 
 export type SaveExercisePreferenceResult =
@@ -68,31 +80,46 @@ export class SQLiteExerciseLibraryRepository implements ExerciseLibraryRepositor
       `SELECT
         exercises.content_version,
         exercises.payload_json,
-        exercise_preferences.favorite,
-        exercise_preferences.avoid_state,
-        exercise_preferences.avoid_until
+        exercise_preference_states.id AS state_id,
+        exercise_preference_states.favorite AS state_favorite,
+        exercise_preference_states.avoid_state AS state_avoid_state,
+        exercise_preference_states.avoid_until AS state_avoid_until,
+        exercise_preferences.preference AS legacy_preference
       FROM exercises
       JOIN schema_metadata
         ON schema_metadata.content_version = exercises.content_version
       LEFT JOIN exercise_preferences
         ON exercise_preferences.exercise_id = exercises.exercise_id
         AND exercise_preferences.user_profile_id = ?
+      LEFT JOIN exercise_preference_states
+        ON exercise_preference_states.exercise_id = exercises.exercise_id
+        AND exercise_preference_states.user_profile_id = ?
       WHERE exercises.review_status != 'retired'
       ORDER BY exercises.name COLLATE NOCASE, exercises.exercise_id`,
+      profile?.id ?? '',
       profile?.id ?? '',
     );
 
     return rows.map((row) => {
       const payload = payloadSchema.parse(JSON.parse(row.payload_json));
+      const preference: EffectivePreference =
+        row.state_id !== null
+          ? {
+              favorite: row.state_favorite === 1,
+              avoidState: row.state_avoid_state ?? 'none',
+              avoidUntil: row.state_avoid_until,
+            }
+          : {
+              favorite: row.legacy_preference === 'favorite',
+              avoidState:
+                row.legacy_preference === 'avoided' ? 'permanent' : 'none',
+              avoidUntil: null,
+            };
       return {
         contentVersion: row.content_version,
         exercise: payload.exercise,
         copy: payload.copy,
-        preference: {
-          favorite: row.favorite === 1,
-          avoidState: row.avoid_state ?? 'none',
-          avoidUntil: row.avoid_until,
-        },
+        preference,
       };
     });
   }
@@ -103,8 +130,8 @@ export class SQLiteExerciseLibraryRepository implements ExerciseLibraryRepositor
   ): Promise<SaveExercisePreferenceResult> {
     return this.updatePreference(exerciseId, (current) => ({
       favorite,
-      avoidState: current?.avoid_state ?? 'none',
-      avoidUntil: current?.avoid_until ?? null,
+      avoidState: current.avoidState,
+      avoidUntil: current.avoidUntil,
     }));
   }
 
@@ -113,7 +140,7 @@ export class SQLiteExerciseLibraryRepository implements ExerciseLibraryRepositor
     avoided: boolean,
   ): Promise<SaveExercisePreferenceResult> {
     return this.updatePreference(exerciseId, (current) => ({
-      favorite: current?.favorite === 1,
+      favorite: current.favorite,
       avoidState: avoided ? 'permanent' : 'none',
       avoidUntil: null,
     }));
@@ -121,7 +148,7 @@ export class SQLiteExerciseLibraryRepository implements ExerciseLibraryRepositor
 
   private async updatePreference(
     exerciseId: string,
-    update: (current: PreferenceRow | null) => {
+    update: (current: EffectivePreference) => {
       readonly favorite: boolean;
       readonly avoidState: ExerciseAvoidState;
       readonly avoidUntil: string | null;
@@ -153,15 +180,34 @@ export class SQLiteExerciseLibraryRepository implements ExerciseLibraryRepositor
 
       const current = await transaction.getFirstAsync<PreferenceRow>(
         `SELECT id, favorite, avoid_state, avoid_until, created_at
-        FROM exercise_preferences
+        FROM exercise_preference_states
         WHERE user_profile_id = ? AND exercise_id = ?`,
         profile.id,
         exerciseId,
       );
-      const next = update(current);
-      if (!next.favorite && next.avoidState === 'none') {
+      const legacy = await transaction.getFirstAsync<LegacyPreferenceRow>(
+        `SELECT preference FROM exercise_preferences
+        WHERE user_profile_id = ? AND exercise_id = ?`,
+        profile.id,
+        exerciseId,
+      );
+      const effective: EffectivePreference =
+        current !== null
+          ? {
+              favorite: current.favorite === 1,
+              avoidState: current.avoid_state,
+              avoidUntil: current.avoid_until,
+            }
+          : {
+              favorite: legacy?.preference === 'favorite',
+              avoidState:
+                legacy?.preference === 'avoided' ? 'permanent' : 'none',
+              avoidUntil: null,
+            };
+      const next = update(effective);
+      if (!next.favorite && next.avoidState === 'none' && legacy === null) {
         await transaction.runAsync(
-          `DELETE FROM exercise_preferences
+          `DELETE FROM exercise_preference_states
           WHERE user_profile_id = ? AND exercise_id = ?`,
           profile.id,
           exerciseId,
@@ -169,7 +215,7 @@ export class SQLiteExerciseLibraryRepository implements ExerciseLibraryRepositor
       } else {
         const timestamp = this.now();
         await transaction.runAsync(
-          `INSERT INTO exercise_preferences (
+          `INSERT INTO exercise_preference_states (
             id, user_profile_id, exercise_id, favorite, avoid_state,
             avoid_until, created_at, updated_at
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)

@@ -125,7 +125,7 @@ describe('exercise library persistence', () => {
     });
     await expect(
       database.getFirstAsync<{ favorite: number; avoid_state: string }>(
-        `SELECT favorite, avoid_state FROM exercise_preferences
+        `SELECT favorite, avoid_state FROM exercise_preference_states
         WHERE exercise_id = ?`,
         exerciseId,
       ),
@@ -142,6 +142,62 @@ describe('exercise library persistence', () => {
         'SELECT COUNT(*) AS count FROM exercise_preferences',
       ),
     ).resolves.toEqual({ count: 0 });
+    await expect(
+      database.getFirstAsync<{ count: number }>(
+        'SELECT COUNT(*) AS count FROM exercise_preference_states',
+      ),
+    ).resolves.toEqual({ count: 0 });
+  });
+
+  it('preserves and supersedes a preference from the earlier schema-six draft', async () => {
+    await database.runAsync(
+      `INSERT INTO user_profiles (
+        id, onboarding_completed_at, safety_rules_version,
+        safety_acknowledged_at, created_at, updated_at
+      ) VALUES (?, ?, 'test_rules', ?, ?, ?)`,
+      profileId,
+      timestamp,
+      timestamp,
+      timestamp,
+      timestamp,
+    );
+    const repository = new SQLiteExerciseLibraryRepository(
+      database,
+      () => timestamp,
+      () => '00000000000000000000000001',
+    );
+    const exerciseId = bundledContentInstallation.exercises[0]!.exercise.id;
+    await database.runAsync(
+      `INSERT INTO exercise_preferences (
+        user_profile_id, exercise_id, preference, updated_at
+      ) VALUES (?, ?, 'favorite', ?)`,
+      profileId,
+      exerciseId,
+      timestamp,
+    );
+
+    await expect(repository.list()).resolves.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          exercise: expect.objectContaining({ id: exerciseId }),
+          preference: {
+            favorite: true,
+            avoidState: 'none',
+            avoidUntil: null,
+          },
+        }),
+      ]),
+    );
+    await expect(repository.setAvoided(exerciseId, true)).resolves.toEqual({
+      ok: true,
+    });
+    await expect(
+      database.getFirstAsync<{ favorite: number; avoid_state: string }>(
+        `SELECT favorite, avoid_state FROM exercise_preference_states
+        WHERE exercise_id = ?`,
+        exerciseId,
+      ),
+    ).resolves.toEqual({ favorite: 1, avoid_state: 'permanent' });
   });
 
   it('rejects preferences without a profile or for an unknown exercise', async () => {

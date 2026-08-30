@@ -46,7 +46,7 @@ describe('database migrations', () => {
     await expect(
       new SQLiteSchemaMetadataRepository(database).get(),
     ).resolves.toMatchObject({
-      schemaVersion: 6,
+      schemaVersion: 7,
       migrationState: 'idle',
       lastIntegrityResult: 'ok',
       updatedAt: timestamp,
@@ -58,7 +58,7 @@ describe('database migrations', () => {
 
     expect(result).toEqual({
       fromVersion: 0,
-      toVersion: 6,
+      toVersion: 7,
       appliedMigrationIds: [
         '0001_schema_lifecycle',
         '0002_user_profile',
@@ -66,15 +66,16 @@ describe('database migrations', () => {
         '0004_check_in_focus_regions',
         '0005_check_in_safety',
         '0006_exercise_library',
+        '0007_exercise_preference_states',
       ],
     });
     await expect(
       new SQLiteSchemaMetadataRepository(database).get(),
     ).resolves.toEqual({
-      schemaVersion: 6,
+      schemaVersion: 7,
       contentVersion: null,
       migrationState: 'idle',
-      lastSuccessfulMigrationId: '0006_exercise_library',
+      lastSuccessfulMigrationId: '0007_exercise_preference_states',
       lastMigratedAt: timestamp,
       lastSuccessfulBackupId: null,
       lastSuccessfulBackupChecksum: null,
@@ -153,6 +154,17 @@ describe('database migrations', () => {
         checksum: migrations[5]?.checksum,
         failureReasonCode: null,
       },
+      {
+        migrationId: '0007_exercise_preference_states',
+        fromSchemaVersion: 6,
+        toSchemaVersion: 7,
+        startedAt: timestamp,
+        completedAt: timestamp,
+        backupId: null,
+        status: 'completed',
+        checksum: migrations[6]?.checksum,
+        failureReasonCode: null,
+      },
     ]);
   });
 
@@ -162,13 +174,13 @@ describe('database migrations', () => {
     await expect(
       runMigrations(database, migrations, () => timestamp),
     ).resolves.toEqual({
-      fromVersion: 6,
-      toVersion: 6,
+      fromVersion: 7,
+      toVersion: 7,
       appliedMigrationIds: [],
     });
     await expect(
       new SQLiteMigrationHistoryRepository(database).list(),
-    ).resolves.toHaveLength(6);
+    ).resolves.toHaveLength(7);
   });
 
   it('rolls back an interrupted migration so startup can retry from the prior version', async () => {
@@ -197,12 +209,12 @@ describe('database migrations', () => {
       runMigrations(database, migrations, () => timestamp),
     ).resolves.toMatchObject({
       fromVersion: 0,
-      toVersion: 6,
+      toVersion: 7,
     });
   });
 
   it('stops when the on-device schema is newer than this app supports', async () => {
-    await database.execAsync('PRAGMA user_version = 7');
+    await database.execAsync('PRAGMA user_version = 8');
 
     await expect(
       runMigrations(database, migrations, () => timestamp),
@@ -217,9 +229,9 @@ describe('database migrations', () => {
       'CREATE TABLE owner_data_probe (id INTEGER PRIMARY KEY)',
     ];
     const ownerDataMigration: Migration = {
-      id: '0007_owner_data_probe',
-      fromVersion: 6,
-      toVersion: 7,
+      id: '0008_owner_data_probe',
+      fromVersion: 7,
+      toVersion: 8,
       checksum: checksum(ownerDataMigrationStatements),
       affectsOwnerData: true,
       statements: ownerDataMigrationStatements,
@@ -236,7 +248,7 @@ describe('database migrations', () => {
     });
     await expect(
       database.getFirstAsync<{ user_version: number }>('PRAGMA user_version'),
-    ).resolves.toEqual({ user_version: 6 });
+    ).resolves.toEqual({ user_version: 7 });
     await expect(
       database.getFirstAsync<{ name: string }>(
         "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'owner_data_probe'",
@@ -251,13 +263,14 @@ describe('database migrations', () => {
       runMigrations(database, migrations, () => timestamp),
     ).resolves.toEqual({
       fromVersion: 1,
-      toVersion: 6,
+      toVersion: 7,
       appliedMigrationIds: [
         '0002_user_profile',
         '0003_check_ins',
         '0004_check_in_focus_regions',
         '0005_check_in_safety',
         '0006_exercise_library',
+        '0007_exercise_preference_states',
       ],
     });
     await expect(
@@ -418,7 +431,7 @@ describe('database migrations', () => {
     );
 
     await expect(
-      runMigrations(database, migrations, () => timestamp),
+      runMigrations(database, migrations.slice(0, 6), () => timestamp),
     ).resolves.toEqual({
       fromVersion: 5,
       toVersion: 6,
@@ -442,10 +455,47 @@ describe('database migrations', () => {
       { name: 'exercise_preferences' },
       { name: 'exercises' },
     ]);
+  });
+
+  it('adds independent preference states while preserving schema-six choices', async () => {
+    await runMigrations(database, migrations.slice(0, 6), () => timestamp);
+    const profileId = '00000000000000000000000000';
+    await database.runAsync(
+      `INSERT INTO user_profiles (
+        id, onboarding_completed_at, safety_rules_version,
+        safety_acknowledged_at, created_at, updated_at
+      ) VALUES (?, ?, 'test_rules', ?, ?, ?)`,
+      profileId,
+      timestamp,
+      timestamp,
+      timestamp,
+      timestamp,
+    );
+    await database.runAsync(
+      `INSERT INTO exercise_preferences (
+        user_profile_id, exercise_id, preference, updated_at
+      ) VALUES (?, 'legacy-exercise', 'favorite', ?)`,
+      profileId,
+      timestamp,
+    );
 
     await expect(
+      runMigrations(database, migrations, () => timestamp),
+    ).resolves.toEqual({
+      fromVersion: 6,
+      toVersion: 7,
+      appliedMigrationIds: ['0007_exercise_preference_states'],
+    });
+    await expect(
+      database.getFirstAsync<{ preference: string }>(
+        `SELECT preference FROM exercise_preferences
+        WHERE user_profile_id = ? AND exercise_id = 'legacy-exercise'`,
+        profileId,
+      ),
+    ).resolves.toEqual({ preference: 'favorite' });
+    await expect(
       database.runAsync(
-        `INSERT INTO exercise_preferences (
+        `INSERT INTO exercise_preference_states (
           id, user_profile_id, exercise_id, favorite, avoid_state,
           avoid_until, created_at, updated_at
         ) VALUES ('preference', ?, 'exercise', 0, 'temporary', NULL, ?, ?)`,

@@ -5,7 +5,7 @@ export const exerciseLibraryMigration: Migration = {
   fromVersion: 5,
   toVersion: 6,
   checksum:
-    'sha256:1cf7ee0154ef804c8cc46fc45b40853ed033fb04577135c74bc62107de7817bd',
+    'sha256:22fe266d9821baa99b2b68e6dac3aca16a6b398a357ca652a74be5e8ec143889',
   affectsOwnerData: false,
   statements: [
     `CREATE TABLE content_packs (
@@ -35,25 +35,15 @@ export const exerciseLibraryMigration: Migration = {
       UNIQUE (slug, version)
     ) STRICT`,
     `CREATE TABLE exercise_preferences (
-      id TEXT PRIMARY KEY CHECK (length(id) > 0),
       user_profile_id TEXT NOT NULL REFERENCES user_profiles(id) ON DELETE CASCADE,
       exercise_id TEXT NOT NULL CHECK (length(exercise_id) > 0),
-      favorite INTEGER NOT NULL DEFAULT 0 CHECK (favorite IN (0, 1)),
-      avoid_state TEXT NOT NULL DEFAULT 'none' CHECK (
-        avoid_state IN ('none', 'temporary', 'permanent')
-      ),
-      avoid_until TEXT,
-      created_at TEXT NOT NULL,
+      preference TEXT NOT NULL CHECK (preference IN ('favorite', 'avoided')),
       updated_at TEXT NOT NULL,
-      UNIQUE (user_profile_id, exercise_id),
-      CHECK (
-        (avoid_state = 'temporary' AND avoid_until IS NOT NULL)
-        OR (avoid_state != 'temporary' AND avoid_until IS NULL)
-      )
+      PRIMARY KEY (user_profile_id, exercise_id)
     ) STRICT`,
     `CREATE INDEX exercises_content_version_status
       ON exercises(content_version, review_status, name)`,
     `CREATE INDEX exercise_preferences_preference
-      ON exercise_preferences(user_profile_id, favorite, avoid_state)`,
+      ON exercise_preferences(user_profile_id, preference)`,
   ],
 };
