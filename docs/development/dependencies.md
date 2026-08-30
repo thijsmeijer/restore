@@ -13,6 +13,7 @@
 | Gesture Handler, Reanimated, and Worklets | Expo Router/native-navigation peer foundation pinned to the SDK 57 template versions | Leaving these implicit allowed pnpm to select incompatible peer versions |
 | Expo Dev Client | Native-capable development build | Expo Go cannot represent the eventual native dependency set |
 | Expo SQLite | Durable, transactional, offline device storage required by ADR 0002 and DB-001 | React Native has no platform SQLite API; key/value or file storage cannot provide the required relational constraints, migrations, transactions, and recovery behavior |
+| React Native SVG | Interactive, scalable front/back body-map geometry required by MAP-001 | Nested React Native views do not provide stable vector paths or scale cleanly across iPhone sizes and Dynamic Type settings |
 | Zod | Versioned runtime validation for content, imports, and future durable JSON snapshots | TypeScript types disappear at runtime; handwritten validators would duplicate the wire contract and make path-specific failures harder to keep complete |
 
 No analytics, database, form, state-management, media, notification, HealthKit,
@@ -50,6 +51,20 @@ interfaces. Drizzle remains a valid later replacement if the domain schema
 makes generated queries materially useful. Removal requires replacing the
 adapter while preserving the on-device database, migration checksums, repository
 contracts, and released-schema fixtures; it must never reset owner data.
+
+### MAP-001 body-map decision
+
+`react-native-svg@15.15.4` is pinned to the Expo SDK-compatible release and is
+MIT licensed. It renders the simplified front/back silhouette locally, adds no
+network behavior, analytics, storage, permission, or entitlement, and replaces
+the brittle alternative of composing anatomical geometry from nested native
+views. The body map keeps native `Pressable` controls over the SVG so VoiceOver
+and 44-point touch targets do not depend on SVG-element accessibility support.
+The native module increases the application binary and requires a new compatible
+development/preview build; the hand-authored geometry adds only a small amount
+of JavaScript bundle data. Removal requires replacing scalable map rendering
+while preserving canonical region/side mapping, visible selection state, touch
+targets, and the complete list-based accessible route.
 
 ### CONTENT-001 validation decision
 

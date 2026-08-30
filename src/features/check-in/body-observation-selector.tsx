@@ -12,6 +12,11 @@ import {
 import { Sheet } from '@/components/sheet';
 import { radius, spacing, typography } from '@/design-system/tokens';
 import { useRestoreTheme } from '@/design-system/use-theme';
+import {
+  AccessibleBodyMap,
+  type BodyMapTarget,
+  type BodyMapView,
+} from '@/features/check-in/accessible-body-map';
 import type { CheckInRegionInput } from '@/features/check-in/check-in';
 import {
   bodyRegionOptions,
@@ -19,9 +24,7 @@ import {
   type BodySide,
 } from '@/features/onboarding/profile-options';
 
-type BodyView = 'front' | 'back';
-
-const bodyViewOptions: readonly SegmentOption<BodyView>[] = [
+const bodyViewOptions: readonly SegmentOption<BodyMapView>[] = [
   { label: 'Front', value: 'front' },
   { label: 'Back', value: 'back' },
 ];
@@ -71,7 +74,11 @@ export function BodyObservationSelector({
 }: BodyObservationSelectorProps) {
   const { colors } = useRestoreTheme();
   const [visible, setVisible] = useState(false);
-  const [bodyView, setBodyView] = useState<BodyView>('front');
+  const [bodyView, setBodyView] = useState<BodyMapView>('front');
+  const [useRegionList, setUseRegionList] = useState(false);
+  const [candidateTarget, setCandidateTarget] = useState<BodyMapTarget | null>(
+    null,
+  );
   const [editingSlug, setEditingSlug] = useState<BodyRegionSlug | null>(null);
   const [draft, setDraft] = useState<CheckInRegionInput | null>(null);
   const editingRegion = bodyRegionOptions.find(
@@ -94,22 +101,38 @@ export function BodyObservationSelector({
     setVisible(false);
     setEditingSlug(null);
     setDraft(null);
+    setCandidateTarget(null);
   };
 
-  const chooseRegion = (slug: BodyRegionSlug) => {
+  const chooseRegion = (slug: BodyRegionSlug, suggestedSide?: BodySide) => {
     const region = bodyRegionOptions.find((option) => option.slug === slug);
     if (region === undefined) return;
     const existing = value.find((entry) => entry.regionSlug === slug);
+    setCandidateTarget(null);
     setEditingSlug(slug);
     setDraft(
       existing ?? {
         regionSlug: slug,
-        side: region.laterality === 'central' ? 'central' : 'bilateral',
+        side:
+          region.laterality === 'central'
+            ? 'central'
+            : suggestedSide === undefined || suggestedSide === 'central'
+              ? 'bilateral'
+              : suggestedSide,
         stiffness: null,
         soreness: null,
         discomfort: null,
       },
     );
+  };
+
+  const chooseMapTarget = (target: BodyMapTarget) => {
+    if (target.regionSlugs.length === 1) {
+      const [slug] = target.regionSlugs;
+      if (slug !== undefined) chooseRegion(slug, target.side);
+      return;
+    }
+    setCandidateTarget(target);
   };
 
   const saveDraft = () => {
@@ -213,38 +236,148 @@ export function BodyObservationSelector({
         closeLabel="Cancel"
         onRequestClose={close}
         title={
-          editingRegion ? `Rate ${editingRegion.label}` : 'Choose a body area'
+          editingRegion
+            ? `Rate ${editingRegion.label}`
+            : candidateTarget
+              ? `Choose ${candidateTarget.label.toLowerCase()}`
+              : 'Choose a body area'
         }
         visible={visible}
       >
         {editingRegion === undefined || draft === null ? (
           <>
-            <SegmentedControl
-              label="Body view"
-              onChange={setBodyView}
-              options={bodyViewOptions}
-              value={bodyView}
-            />
-            <View style={styles.regionGrid}>
-              {visibleRegions.map((region) => {
-                const selected = value.some(
-                  (entry) => entry.regionSlug === region.slug,
-                );
-                return (
-                  <OptionChip
-                    accessibilityHint={
-                      selected
-                        ? 'Opens the saved ratings for this area.'
-                        : 'Opens side and rating choices for this area.'
-                    }
-                    key={region.slug}
-                    label={region.label}
-                    onPress={() => chooseRegion(region.slug)}
-                    selected={selected}
-                  />
-                );
-              })}
-            </View>
+            {candidateTarget ? (
+              <>
+                <Text style={[styles.helper, { color: colors.textMuted }]}>
+                  Choose the closest match. You can adjust the side before
+                  saving.
+                </Text>
+                <View style={styles.regionGrid}>
+                  {candidateTarget.regionSlugs.map((slug) => {
+                    const region = bodyRegionOptions.find(
+                      (option) => option.slug === slug,
+                    );
+                    if (region === undefined) return null;
+                    return (
+                      <OptionChip
+                        accessibilityHint="Opens side and rating choices for this area."
+                        key={region.slug}
+                        label={region.label}
+                        onPress={() =>
+                          chooseRegion(region.slug, candidateTarget.side)
+                        }
+                        selected={value.some(
+                          (entry) => entry.regionSlug === region.slug,
+                        )}
+                      />
+                    );
+                  })}
+                </View>
+                <Button
+                  label="Back to body map"
+                  onPress={() => setCandidateTarget(null)}
+                  variant="secondary"
+                />
+              </>
+            ) : (
+              <>
+                {value.length > 0 ? (
+                  <View style={styles.selectedList}>
+                    <Text style={[styles.listLabel, { color: colors.text }]}>
+                      Selected today
+                    </Text>
+                    {value.map((selection) => {
+                      const region = bodyRegionOptions.find(
+                        (option) => option.slug === selection.regionSlug,
+                      );
+                      return (
+                        <Pressable
+                          accessibilityHint="Opens this area's ratings for editing."
+                          accessibilityLabel={`${region?.label ?? selection.regionSlug}, ${sideLabel(selection.side)}, ${ratingsLabel(selection)}`}
+                          accessibilityRole="button"
+                          key={`${selection.regionSlug}:${selection.side}`}
+                          onPress={() => chooseRegion(selection.regionSlug)}
+                          style={({ pressed }) => [
+                            styles.selectedArea,
+                            {
+                              backgroundColor: colors.accentMuted,
+                              borderColor: colors.accent,
+                              opacity: pressed ? 0.8 : 1,
+                            },
+                          ]}
+                        >
+                          <Text
+                            style={[styles.areaTitle, { color: colors.text }]}
+                          >
+                            {region?.label ?? selection.regionSlug} ·{' '}
+                            {sideLabel(selection.side)}
+                          </Text>
+                          <Text
+                            style={[
+                              styles.areaRatings,
+                              { color: colors.textMuted },
+                            ]}
+                          >
+                            {ratingsLabel(selection)}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                ) : null}
+
+                <SegmentedControl
+                  label="Body view"
+                  onChange={setBodyView}
+                  options={bodyViewOptions}
+                  value={bodyView}
+                />
+
+                {useRegionList ? (
+                  <>
+                    <View style={styles.regionGrid}>
+                      {visibleRegions.map((region) => {
+                        const selected = value.some(
+                          (entry) => entry.regionSlug === region.slug,
+                        );
+                        return (
+                          <OptionChip
+                            accessibilityHint={
+                              selected
+                                ? 'Opens the saved ratings for this area.'
+                                : 'Opens side and rating choices for this area.'
+                            }
+                            key={region.slug}
+                            label={region.label}
+                            onPress={() => chooseRegion(region.slug)}
+                            selected={selected}
+                          />
+                        );
+                      })}
+                    </View>
+                    <Button
+                      label="Use body map"
+                      onPress={() => setUseRegionList(false)}
+                      variant="secondary"
+                    />
+                  </>
+                ) : (
+                  <>
+                    <AccessibleBodyMap
+                      onPressTarget={chooseMapTarget}
+                      selections={value}
+                      view={bodyView}
+                    />
+                    <Button
+                      accessibilityHint="Shows every available body area as a text list."
+                      label="Choose from list"
+                      onPress={() => setUseRegionList(true)}
+                      variant="secondary"
+                    />
+                  </>
+                )}
+              </>
+            )}
           </>
         ) : (
           <>
@@ -312,6 +445,7 @@ export function BodyObservationSelector({
               onPress={() => {
                 setEditingSlug(null);
                 setDraft(null);
+                setCandidateTarget(null);
               }}
               variant="secondary"
             />
@@ -333,6 +467,10 @@ const styles = StyleSheet.create({
   },
   selectedList: {
     gap: spacing.sm,
+  },
+  listLabel: {
+    fontSize: typography.label,
+    fontWeight: '700',
   },
   selectedArea: {
     borderRadius: radius.md,
