@@ -16,6 +16,12 @@ The user must be able to exit any safety message, inspect or delete their data,
 and use non-exercise parts of the app. Acknowledging a disclaimer never bypasses
 a safety rule.
 
+The initial engineering-baseline acknowledgement is versioned as
+`safety_baseline_2026_08_28`. It records only that the owner saw the product
+boundary and stop guidance. It is not a `clear` safety result, does not make
+draft exercise content selectable, and must be replaced or re-acknowledged when
+the reviewed acknowledgement rules version changes.
+
 ## Safety result contract
 
 Every submitted check-in produces one of these stored results before generation:

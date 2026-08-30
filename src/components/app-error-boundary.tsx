@@ -43,9 +43,9 @@ export class AppErrorBoundary extends Component<
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <ErrorState
-          description="Something unexpected happened. Try again, or restart Restore if the problem continues."
+          description="Restore could not continue. Try again, or reopen the app if the problem continues."
           onRetry={this.retry}
-          title="Restore paused"
+          title="Something went wrong"
         />
       </View>
     );

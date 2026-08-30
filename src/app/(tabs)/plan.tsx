@@ -3,9 +3,10 @@ import { PlaceholderScreen } from '@/components/placeholder-screen';
 export default function PlanScreen() {
   return (
     <PlaceholderScreen
-      eyebrow="Phase 1"
+      eyebrow="Plan"
       title="Plan"
-      description="Weekly mobility slots and local reminders remain inactive until the scheduling milestone."
+      cardTitle="No sessions planned"
+      description="Your weekly mobility sessions and reminders will appear here."
     />
   );
 }
