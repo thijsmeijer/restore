@@ -151,6 +151,7 @@ describe('check-in form', () => {
       }),
     );
     expect(screen.queryByText('Choose wrist, hand, and fingers')).toBeNull();
+    expect(screen.queryByText('Selected today')).toBeNull();
     expect(screen.queryByText('Stiffness')).toBeNull();
 
     expect(onChange).toHaveBeenCalledWith([
@@ -173,22 +174,42 @@ describe('check-in form', () => {
     await fireEvent.press(
       screen.getByRole('button', { name: 'Right elbow, front' }),
     );
-    screen.getByRole('button', { name: 'Elbow, Right' });
+    expect(
+      screen.getByRole('button', { name: 'Right elbow, front' }).props
+        .accessibilityState,
+    ).toEqual({ selected: true });
 
     await fireEvent.press(
       screen.getByRole('button', { name: 'Left elbow, front' }),
     );
-    screen.getByRole('button', { name: 'Elbow, Both sides' });
+    expect(
+      screen.getByRole('button', { name: 'Right elbow, front' }).props
+        .accessibilityState,
+    ).toEqual({ selected: true });
+    expect(
+      screen.getByRole('button', { name: 'Left elbow, front' }).props
+        .accessibilityState,
+    ).toEqual({ selected: true });
 
     await fireEvent.press(
       screen.getByRole('button', { name: 'Right elbow, front' }),
     );
-    screen.getByRole('button', { name: 'Elbow, Left' });
+    expect(
+      screen.getByRole('button', { name: 'Right elbow, front' }).props
+        .accessibilityState,
+    ).toEqual({ selected: false });
+    expect(
+      screen.getByRole('button', { name: 'Left elbow, front' }).props
+        .accessibilityState,
+    ).toEqual({ selected: true });
 
     await fireEvent.press(
       screen.getByRole('button', { name: 'Left elbow, front' }),
     );
-    expect(screen.queryByRole('button', { name: 'Elbow, Left' })).toBeNull();
+    expect(
+      screen.getByRole('button', { name: 'Left elbow, front' }).props
+        .accessibilityState,
+    ).toEqual({ selected: false });
   });
 
   it('supports crowded map areas, back view, and the full text list', async () => {

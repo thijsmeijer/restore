@@ -345,41 +345,6 @@ export function BodyObservationSelector({
           </>
         ) : (
           <>
-            {value.length > 0 ? (
-              <View style={styles.selectedList}>
-                <Text style={[styles.listLabel, { color: colors.text }]}>
-                  Selected today
-                </Text>
-                {value.map((selection) => {
-                  const region = bodyRegionOptions.find(
-                    (option) => option.slug === selection.regionSlug,
-                  );
-                  return (
-                    <Pressable
-                      accessibilityHint="Adjusts the side or removes this focus area."
-                      accessibilityLabel={`${region?.label ?? selection.regionSlug}, ${sideLabel(selection.side)}`}
-                      accessibilityRole="button"
-                      key={`${selection.regionSlug}:${selection.side}`}
-                      onPress={() => editRegion(selection.regionSlug)}
-                      style={({ pressed }) => [
-                        styles.selectedArea,
-                        {
-                          backgroundColor: colors.accentMuted,
-                          borderColor: colors.accent,
-                          opacity: pressed ? 0.8 : 1,
-                        },
-                      ]}
-                    >
-                      <Text style={[styles.areaTitle, { color: colors.text }]}>
-                        {region?.label ?? selection.regionSlug} ·{' '}
-                        {sideLabel(selection.side)}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            ) : null}
-
             <SegmentedControl
               label="Body view"
               onChange={setBodyView}
@@ -447,10 +412,6 @@ const styles = StyleSheet.create({
   },
   selectedList: {
     gap: spacing.sm,
-  },
-  listLabel: {
-    fontSize: typography.label,
-    fontWeight: '700',
   },
   selectedArea: {
     borderRadius: radius.md,
