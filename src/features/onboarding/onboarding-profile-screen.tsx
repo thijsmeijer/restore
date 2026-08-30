@@ -114,6 +114,7 @@ export function OnboardingProfileScreen({
   const [input, setInput] = useState(() => initialInput(initialProfile));
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [goalDragActive, setGoalDragActive] = useState(false);
   const headingRef = useRef<Text>(null);
   const editing = initialProfile !== null;
 
@@ -178,7 +179,10 @@ export function OnboardingProfileScreen({
   ][step];
 
   return (
-    <Screen testID={editing ? 'profile-edit-screen' : 'onboarding-screen'}>
+    <Screen
+      scrollEnabled={!goalDragActive}
+      testID={editing ? 'profile-edit-screen' : 'onboarding-screen'}
+    >
       <View style={styles.heading}>
         <Badge
           label={step === 0 ? 'Private and offline' : `Step ${step} of 6`}
@@ -240,9 +244,6 @@ export function OnboardingProfileScreen({
               <Text style={[styles.cardTitle, { color: colors.text }]}>
                 Your priorities
               </Text>
-              <Text style={[styles.note, { color: colors.textMuted }]}>
-                Drag the handle to change the order.
-              </Text>
               <DraggableGoalList
                 goals={input.goalSlugs}
                 labelForGoal={(slug) =>
@@ -250,6 +251,7 @@ export function OnboardingProfileScreen({
                   slug
                 }
                 onChange={(goalSlugs) => update({ goalSlugs })}
+                onDragStateChange={setGoalDragActive}
               />
             </Card>
           ) : null}
@@ -483,10 +485,6 @@ const styles = StyleSheet.create({
   },
   choiceStatus: {
     fontSize: typography.caption,
-  },
-  note: {
-    fontSize: typography.label,
-    lineHeight: 21,
   },
   trainingGroups: {
     gap: spacing.lg,

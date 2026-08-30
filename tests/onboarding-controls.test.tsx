@@ -1,7 +1,10 @@
 import { fireEvent, render } from '@testing-library/react-native';
 
 import { BodyBaselineSelector } from '@/features/onboarding/body-baseline-selector';
-import { moveGoalToIndex } from '@/features/onboarding/draggable-goal-list';
+import {
+  insertionSlotForMove,
+  moveGoalToIndex,
+} from '@/features/onboarding/draggable-goal-list';
 import { adjustDurations } from '@/features/onboarding/duration-selector';
 
 describe('onboarding controls', () => {
@@ -13,6 +16,9 @@ describe('onboarding controls', () => {
         0,
       ),
     ).toEqual(['wind_down', 'move_better', 'reduce_stiffness']);
+    expect(insertionSlotForMove(2, 0)).toBe(0);
+    expect(insertionSlotForMove(0, 2)).toBe(3);
+    expect(insertionSlotForMove(1, 1)).toBe(1);
   });
 
   it('keeps chosen routine lengths in a valid ascending order', () => {

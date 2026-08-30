@@ -6,10 +6,15 @@ import { spacing } from '@/design-system/tokens';
 import { useRestoreTheme } from '@/design-system/use-theme';
 
 type ScreenProps = PropsWithChildren<{
+  scrollEnabled?: boolean;
   testID?: string;
 }>;
 
-export function Screen({ children, testID }: ScreenProps) {
+export function Screen({
+  children,
+  scrollEnabled = true,
+  testID,
+}: ScreenProps) {
   const { colors } = useRestoreTheme();
 
   return (
@@ -21,6 +26,7 @@ export function Screen({ children, testID }: ScreenProps) {
       <ScrollView
         contentContainerStyle={styles.content}
         contentInsetAdjustmentBehavior="automatic"
+        scrollEnabled={scrollEnabled}
       >
         {children}
       </ScrollView>
