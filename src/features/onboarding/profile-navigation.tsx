@@ -23,6 +23,7 @@ export function ProfileNavigation() {
         <Stack.Screen name="check-in" />
         <Stack.Screen name="profile" />
         <Stack.Screen name="exercise/[exerciseId]" />
+        <Stack.Screen name="developer/generator" />
       </Stack.Protected>
     </Stack>
   );

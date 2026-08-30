@@ -194,10 +194,13 @@ describe('GEN-001 hard-filter preparation', () => {
 
   it('stops before template or candidate selection when safety is blocked', () => {
     const input = { ...generationInput(), safety_state: 'blocked' as const };
+    const exercise = reviewedExercise();
+    const catalog = {
+      ...generationCatalog(),
+      exercises: [exercise, structuredClone(exercise)],
+    };
 
-    expect(
-      prepareGeneration(input, generationCatalog(), generationRules()),
-    ).toEqual({
+    expect(prepareGeneration(input, catalog, generationRules())).toEqual({
       ok: false,
       code: 'blocked_by_safety',
       explanation_key: 'generator.failure.blocked_by_safety',

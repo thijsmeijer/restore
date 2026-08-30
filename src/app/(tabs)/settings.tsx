@@ -6,6 +6,7 @@ import { Screen } from '@/components/screen';
 import { StyleSheet, Text, View } from 'react-native';
 import { spacing, typography } from '@/design-system/tokens';
 import { useRestoreTheme } from '@/design-system/use-theme';
+import { developerToolsAvailable } from '@/features/developer/developer-tools';
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -36,6 +37,23 @@ export default function SettingsScreen() {
           variant="secondary"
         />
       </Card>
+      {developerToolsAvailable(__DEV__) ? (
+        <Card>
+          <Text style={[styles.cardTitle, { color: colors.text }]}>
+            Developer
+          </Text>
+          <Text style={[styles.body, { color: colors.textMuted }]}>
+            Run the synthetic generator suite and inspect a privacy-redacted
+            decision trace.
+          </Text>
+          <Button
+            accessibilityHint="Opens local generator diagnostics."
+            label="Open generator diagnostics"
+            onPress={() => router.push('/developer/generator')}
+            variant="secondary"
+          />
+        </Card>
+      ) : null}
     </Screen>
   );
 }

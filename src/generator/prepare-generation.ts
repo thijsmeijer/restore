@@ -182,11 +182,11 @@ export function prepareGeneration(
   ) {
     return failure('version_mismatch');
   }
-  if (catalogHasDuplicateExercises(catalog)) {
-    return failure('catalog_duplicate_exercise');
-  }
   if (input.safety_state === 'blocked') {
     return failure('blocked_by_safety');
+  }
+  if (catalogHasDuplicateExercises(catalog)) {
+    return failure('catalog_duplicate_exercise');
   }
   if (catalog.review_status !== 'clinical_reviewed') {
     return failure('catalog_not_clinically_reviewed');

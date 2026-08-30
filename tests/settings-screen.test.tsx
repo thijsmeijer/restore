@@ -19,4 +19,14 @@ describe('settings profile entry point', () => {
 
     expect(mockPush).toHaveBeenCalledWith('/profile');
   });
+
+  it('opens generator diagnostics in development builds', async () => {
+    const screen = await render(<SettingsScreen />);
+
+    await fireEvent.press(
+      screen.getByRole('button', { name: 'Open generator diagnostics' }),
+    );
+
+    expect(mockPush).toHaveBeenCalledWith('/developer/generator');
+  });
 });
