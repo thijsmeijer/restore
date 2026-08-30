@@ -114,6 +114,7 @@ const failureStage: Record<GenerationFailureCode, GenerationTraceStageName> = {
   input_invalid: 'input_validation',
   no_eligible_content: 'hard_filtering',
   phase_unfillable: 'routine_build',
+  replacement_unavailable: 'final_validation',
   routine_invalid: 'final_validation',
   template_ambiguous: 'catalog_review',
   template_unavailable: 'catalog_review',

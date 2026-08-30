@@ -226,6 +226,15 @@ Order is unique within a routine. A ready routine cannot contain duplicate item
 or exercise identities unless a future explicitly versioned template permits a
 repeat; P0 does not.
 
+Schema version 8 adds `generated_routines` and `routine_items` without rewriting
+existing owner records. Generation first writes a draft and its ordered items,
+then transitions it to `ready` in the same transaction. Ready facts and items
+are immutable. Replacement and regeneration create a linked ready snapshot and
+mark the prior ready routine `superseded` atomically; a failed edit leaves the
+prior routine unchanged. At most one routine is `ready` for a check-in. The
+future lossless export format must include this lineage and every referenced
+historical content version.
+
 ### `saved_routines`
 
 - `id`, source routine ID, local name, pinned flag, created/updated timestamps.

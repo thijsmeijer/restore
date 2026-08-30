@@ -132,9 +132,9 @@ describe('GEN-002 deterministic routine generation', () => {
       template_version: 1,
       mode: 'daily_restore',
       content_version: '0.1.0',
-      engine_version: '0.2.0',
+      engine_version: '0.3.0',
       rules_version: 'routine_rules_v1',
-      configuration_version: '1.0.0',
+      configuration_version: '1.1.0',
       seed: 'fixed_seed',
       estimated_duration_seconds: 295,
       target_priorities: [
@@ -326,7 +326,7 @@ describe('GEN-002 deterministic routine generation', () => {
     const input: GenerationInput = {
       ...generationInput(),
       intent: null,
-      profile_goal_slugs: ['recover_after_training', 'move_more_freely'],
+      profile_goal_slugs: ['wind_down', 'move_better'],
     };
     const rules = generationRules();
     const prepared = prepareGeneration(
@@ -350,7 +350,7 @@ describe('GEN-002 deterministic routine generation', () => {
     ).toEqual({
       code: 'profile_goal_match',
       points: 70,
-      reference_id: 'recover_after_training',
+      reference_id: 'wind_down',
     });
   });
 

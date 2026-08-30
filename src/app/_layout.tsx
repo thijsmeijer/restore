@@ -10,6 +10,7 @@ import { CheckInProvider } from '@/features/check-in/check-in-context';
 import { LibraryProvider } from '@/features/library/library-context';
 import { ProfileProvider } from '@/features/onboarding/profile-context';
 import { ProfileNavigation } from '@/features/onboarding/profile-navigation';
+import { RoutineProvider } from '@/features/routine/routine-context';
 
 export default function RootLayout() {
   const scheme = useColorScheme() === 'dark' ? 'dark' : 'light';
@@ -36,7 +37,9 @@ export default function RootLayout() {
             <ProfileProvider>
               <LibraryProvider>
                 <CheckInProvider>
-                  <ProfileNavigation />
+                  <RoutineProvider>
+                    <ProfileNavigation />
+                  </RoutineProvider>
                 </CheckInProvider>
               </LibraryProvider>
             </ProfileProvider>

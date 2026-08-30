@@ -5,6 +5,7 @@ export {
 export { engineeringGenerationRules } from '@/generator/engineering-rules';
 export { generateRoutine } from '@/generator/generate-routine';
 export { prepareGeneration } from '@/generator/prepare-generation';
+export { replaceRoutineItem } from '@/generator/replace-routine-item';
 export {
   buildGenerationScenarioMatrix,
   runGenerationScenarioSuite,
@@ -21,6 +22,7 @@ export type {
   GenerationTarget,
   GeneratorSafetyState,
 } from '@/generator/input-schema';
+export type { ReplaceRoutineItemInput } from '@/generator/replace-routine-item';
 export type {
   CandidateRejection,
   CandidateRejectionCode,

@@ -13,7 +13,7 @@ import {
   utcTimestampSchema,
 } from '@/content/schemas';
 
-export const generatorEngineVersion = '0.2.0' as const;
+export const generatorEngineVersion = '0.3.0' as const;
 
 const generationTargetSchema = z
   .strictObject({
@@ -48,7 +48,7 @@ const trainingContextSchema = z
   .strictObject({
     training_type: canonicalSlugSchema,
     status: z.enum(['planned', 'completed']),
-    stress: z.number().int().min(1).max(5),
+    stress: z.number().int().min(1).max(5).nullable(),
   })
   .readonly();
 

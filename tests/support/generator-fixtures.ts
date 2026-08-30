@@ -115,7 +115,7 @@ export function generationInput(): GenerationInput {
     intent: 'mobilize',
     recent_major_trauma: false,
     restricted_demand_flags: [],
-    profile_goal_slugs: ['move_more_freely'],
+    profile_goal_slugs: ['move_better'],
     training_context: null,
     preferences: [],
     response_aggregates: [],
@@ -123,7 +123,7 @@ export function generationInput(): GenerationInput {
     content_version: '0.1.0',
     engine_version: generatorEngineVersion,
     rules_version: 'routine_rules_v1',
-    configuration_version: '1.0.0',
+    configuration_version: '1.1.0',
     seed: 'fixed_seed',
   };
 }
