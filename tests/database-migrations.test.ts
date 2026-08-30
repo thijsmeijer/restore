@@ -46,7 +46,7 @@ describe('database migrations', () => {
     await expect(
       new SQLiteSchemaMetadataRepository(database).get(),
     ).resolves.toMatchObject({
-      schemaVersion: 7,
+      schemaVersion: 8,
       migrationState: 'idle',
       lastIntegrityResult: 'ok',
       updatedAt: timestamp,
@@ -58,7 +58,7 @@ describe('database migrations', () => {
 
     expect(result).toEqual({
       fromVersion: 0,
-      toVersion: 7,
+      toVersion: 8,
       appliedMigrationIds: [
         '0001_schema_lifecycle',
         '0002_user_profile',
@@ -67,15 +67,16 @@ describe('database migrations', () => {
         '0005_check_in_safety',
         '0006_exercise_library',
         '0007_exercise_preference_states',
+        '0008_generated_routines',
       ],
     });
     await expect(
       new SQLiteSchemaMetadataRepository(database).get(),
     ).resolves.toEqual({
-      schemaVersion: 7,
+      schemaVersion: 8,
       contentVersion: null,
       migrationState: 'idle',
-      lastSuccessfulMigrationId: '0007_exercise_preference_states',
+      lastSuccessfulMigrationId: '0008_generated_routines',
       lastMigratedAt: timestamp,
       lastSuccessfulBackupId: null,
       lastSuccessfulBackupChecksum: null,
@@ -165,6 +166,17 @@ describe('database migrations', () => {
         checksum: migrations[6]?.checksum,
         failureReasonCode: null,
       },
+      {
+        migrationId: '0008_generated_routines',
+        fromSchemaVersion: 7,
+        toSchemaVersion: 8,
+        startedAt: timestamp,
+        completedAt: timestamp,
+        backupId: null,
+        status: 'completed',
+        checksum: migrations[7]?.checksum,
+        failureReasonCode: null,
+      },
     ]);
   });
 
@@ -174,13 +186,13 @@ describe('database migrations', () => {
     await expect(
       runMigrations(database, migrations, () => timestamp),
     ).resolves.toEqual({
-      fromVersion: 7,
-      toVersion: 7,
+      fromVersion: 8,
+      toVersion: 8,
       appliedMigrationIds: [],
     });
     await expect(
       new SQLiteMigrationHistoryRepository(database).list(),
-    ).resolves.toHaveLength(7);
+    ).resolves.toHaveLength(8);
   });
 
   it('rolls back an interrupted migration so startup can retry from the prior version', async () => {
@@ -209,12 +221,12 @@ describe('database migrations', () => {
       runMigrations(database, migrations, () => timestamp),
     ).resolves.toMatchObject({
       fromVersion: 0,
-      toVersion: 7,
+      toVersion: 8,
     });
   });
 
   it('stops when the on-device schema is newer than this app supports', async () => {
-    await database.execAsync('PRAGMA user_version = 8');
+    await database.execAsync('PRAGMA user_version = 9');
 
     await expect(
       runMigrations(database, migrations, () => timestamp),
@@ -229,9 +241,9 @@ describe('database migrations', () => {
       'CREATE TABLE owner_data_probe (id INTEGER PRIMARY KEY)',
     ];
     const ownerDataMigration: Migration = {
-      id: '0008_owner_data_probe',
-      fromVersion: 7,
-      toVersion: 8,
+      id: '0009_owner_data_probe',
+      fromVersion: 8,
+      toVersion: 9,
       checksum: checksum(ownerDataMigrationStatements),
       affectsOwnerData: true,
       statements: ownerDataMigrationStatements,
@@ -248,7 +260,7 @@ describe('database migrations', () => {
     });
     await expect(
       database.getFirstAsync<{ user_version: number }>('PRAGMA user_version'),
-    ).resolves.toEqual({ user_version: 7 });
+    ).resolves.toEqual({ user_version: 8 });
     await expect(
       database.getFirstAsync<{ name: string }>(
         "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'owner_data_probe'",
@@ -263,7 +275,7 @@ describe('database migrations', () => {
       runMigrations(database, migrations, () => timestamp),
     ).resolves.toEqual({
       fromVersion: 1,
-      toVersion: 7,
+      toVersion: 8,
       appliedMigrationIds: [
         '0002_user_profile',
         '0003_check_ins',
@@ -271,6 +283,7 @@ describe('database migrations', () => {
         '0005_check_in_safety',
         '0006_exercise_library',
         '0007_exercise_preference_states',
+        '0008_generated_routines',
       ],
     });
     await expect(
@@ -480,7 +493,7 @@ describe('database migrations', () => {
     );
 
     await expect(
-      runMigrations(database, migrations, () => timestamp),
+      runMigrations(database, migrations.slice(0, 7), () => timestamp),
     ).resolves.toEqual({
       fromVersion: 6,
       toVersion: 7,
@@ -504,6 +517,60 @@ describe('database migrations', () => {
         timestamp,
       ),
     ).rejects.toThrow();
+  });
+
+  it('adds routine storage to schema seven without rewriting existing owner data', async () => {
+    await runMigrations(database, migrations.slice(0, 7), () => timestamp);
+    const profileId = '00000000000000000000000000';
+    const checkInId = '00000000000000000000000001';
+    await database.runAsync(
+      `INSERT INTO user_profiles (
+        id, onboarding_completed_at, safety_rules_version,
+        safety_acknowledged_at, created_at, updated_at
+      ) VALUES (?, ?, 'test_rules', ?, ?, ?)`,
+      profileId,
+      timestamp,
+      timestamp,
+      timestamp,
+      timestamp,
+    );
+    await database.runAsync(
+      `INSERT INTO check_ins (
+        id, user_profile_id, observed_at, local_date, time_zone,
+        session_mode, available_minutes, environment, capture_status,
+        source, created_at, updated_at
+      ) VALUES (?, ?, ?, '2026-08-30', 'Europe/Amsterdam',
+        'daily_restore', 5, 'home', 'captured', 'manual', ?, ?)`,
+      checkInId,
+      profileId,
+      timestamp,
+      timestamp,
+      timestamp,
+    );
+
+    await expect(
+      runMigrations(database, migrations, () => timestamp),
+    ).resolves.toEqual({
+      fromVersion: 7,
+      toVersion: 8,
+      appliedMigrationIds: ['0008_generated_routines'],
+    });
+    await expect(
+      database.getFirstAsync<{ capture_status: string }>(
+        'SELECT capture_status FROM check_ins WHERE id = ?',
+        checkInId,
+      ),
+    ).resolves.toEqual({ capture_status: 'captured' });
+    await expect(
+      database.getAllAsync<{ name: string }>(
+        `SELECT name FROM sqlite_master
+        WHERE type = 'table' AND name IN ('generated_routines', 'routine_items')
+        ORDER BY name`,
+      ),
+    ).resolves.toEqual([
+      { name: 'generated_routines' },
+      { name: 'routine_items' },
+    ]);
   });
 
   it('rejects a non-contiguous or modified migration catalog before applying SQL', async () => {

@@ -5,6 +5,7 @@ import { checkInFocusRegionsMigration } from '@/db/migrations/0004-check-in-focu
 import { checkInSafetyMigration } from '@/db/migrations/0005-check-in-safety';
 import { exerciseLibraryMigration } from '@/db/migrations/0006-exercise-library';
 import { exercisePreferenceStatesMigration } from '@/db/migrations/0007-exercise-preference-states';
+import { generatedRoutinesMigration } from '@/db/migrations/0008-generated-routines';
 import type { Migration } from '@/db/migrations/types';
 
 export const migrations: readonly Migration[] = [
@@ -15,6 +16,7 @@ export const migrations: readonly Migration[] = [
   checkInSafetyMigration,
   exerciseLibraryMigration,
   exercisePreferenceStatesMigration,
+  generatedRoutinesMigration,
 ];
 
-export const latestSchemaVersion = exercisePreferenceStatesMigration.toVersion;
+export const latestSchemaVersion = generatedRoutinesMigration.toVersion;

@@ -21,6 +21,7 @@ const failureExplanationKeys: Record<GenerationFailureCode, string> = {
   input_invalid: 'generator.failure.input_invalid',
   no_eligible_content: 'generator.failure.no_eligible_content',
   phase_unfillable: 'generator.failure.phase_unfillable',
+  replacement_unavailable: 'generator.failure.replacement_unavailable',
   routine_invalid: 'generator.failure.routine_invalid',
   template_ambiguous: 'generator.failure.template_ambiguous',
   template_unavailable: 'generator.failure.template_unavailable',

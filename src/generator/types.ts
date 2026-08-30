@@ -230,6 +230,7 @@ export type GenerationFailureCode =
   | 'no_eligible_content'
   | 'duration_unfillable'
   | 'phase_unfillable'
+  | 'replacement_unavailable'
   | 'routine_invalid'
   | 'template_ambiguous'
   | 'template_unavailable'

@@ -4,7 +4,7 @@ import type { GenerationRules } from '@/generator/types';
 // exact rules and content versions to receive the review required by policy.
 export const engineeringGenerationRules: GenerationRules = {
   rules_version: 'routine_rules_v1',
-  configuration_version: '1.0.0',
+  configuration_version: '1.1.0',
   safety_rules_version: 'check_in_safety_engineering_2026_08_30',
   seconds_per_repetition: 4,
   seconds_per_breathing_cycle: 10,
@@ -18,12 +18,28 @@ export const engineeringGenerationRules: GenerationRules = {
   minimum_profile_goal_priority_basis_points: 2_000,
   goal_effect_mappings: [
     {
-      goal_slug: 'move_more_freely',
+      goal_slug: 'move_better',
       effects: ['mobilize', 'explore_range'],
     },
     {
-      goal_slug: 'recover_after_training',
-      effects: ['recover_after_load', 'down_regulate'],
+      goal_slug: 'reduce_stiffness',
+      effects: ['mobilize', 'decompress'],
+    },
+    {
+      goal_slug: 'prepare_for_calisthenics',
+      effects: ['prepare_for_load', 'stabilize_control'],
+    },
+    {
+      goal_slug: 'improve_posture',
+      effects: ['stabilize_control', 'integrate'],
+    },
+    {
+      goal_slug: 'wind_down',
+      effects: ['down_regulate', 'breathe_expand'],
+    },
+    {
+      goal_slug: 'maintain_joints',
+      effects: ['improve_tolerance', 'explore_range'],
     },
   ],
   maximum_items: 12,

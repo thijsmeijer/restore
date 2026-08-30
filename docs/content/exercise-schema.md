@@ -226,10 +226,26 @@ permitted one-indivisible-exercise difference. Otherwise generation returns an
 explicit `duration_unfillable`, `phase_unfillable`, or `routine_invalid`
 failure; it never returns an unexplained empty routine. Scoring, prescriptions,
 reason codes, input snapshot, versions, seed, validation report, and exact
-exercise identities are part of the reproducible output. SQLite persistence,
-developer trace UI, routine preview, editing, and session playback remain later
-tickets. The bundled pack is still draft-only and intentionally produces no
-routine.
+exercise identities are part of the reproducible output. Session playback
+remains a later ticket. The bundled pack is still draft-only and intentionally
+produces no routine.
+
+## ROUTINE-001 engine version 0.3.0 decisions
+
+Routine preview and replacement share the same prepared candidate set,
+scoring, prescription construction, explanations, and final validator as fresh
+generation. A listed replacement must also support the same sequence slot; the
+engine recomputes alternatives, target coverage, duration, and every validation
+invariant before returning a new routine snapshot. A failed replacement returns
+a stable failure and does not mutate the source routine.
+
+Generation-input schema version 2 now preserves missing training stress as
+`null` instead of inventing a value. Configuration version `1.1.0` maps the
+canonical onboarding goal slugs directly to their bounded effects. Engine
+version `0.3.0` records these integration and editing semantics so stored
+routines remain reproducible. The SQLite routine repository stores the exact
+versioned output and creates a new immutable snapshot for replacement or
+regeneration; it never rewrites the ready source routine.
 
 ## CONTENT-002 draft catalog decisions
 

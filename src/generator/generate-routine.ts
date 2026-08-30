@@ -1,15 +1,12 @@
-import type { Exercise } from '@/content/schemas';
-import {
-  explanationKey,
-  explanationReferences,
-  selectionReasons,
-} from '@/generator/explanations';
 import { prepareGeneration } from '@/generator/prepare-generation';
-import { requiredVariant, warningKeys } from '@/generator/prescription';
+import { requiredVariant } from '@/generator/prescription';
+import {
+  composeRoutineItem,
+  computeTargetCoverage,
+} from '@/generator/routine-composition';
 import { buildRoutineSelections } from '@/generator/routine-builder';
 import { validateRoutine } from '@/generator/routine-validation';
 import { computeTargetPriorities, scoreCandidates } from '@/generator/scoring';
-import { exerciseAddressesTarget } from '@/generator/targeting';
 import type {
   GeneratedRoutineItem,
   GenerationCatalog,
@@ -18,10 +15,6 @@ import type {
   GenerationResult,
   GenerationRules,
   PreparedGeneration,
-  RoutineAlternative,
-  ScoredCandidate,
-  TargetCoverage,
-  TargetPriority,
 } from '@/generator/types';
 
 const failureExplanationKeys: Record<GenerationFailureCode, string> = {
@@ -34,6 +27,7 @@ const failureExplanationKeys: Record<GenerationFailureCode, string> = {
   input_invalid: 'generator.failure.input_invalid',
   no_eligible_content: 'generator.failure.no_eligible_content',
   phase_unfillable: 'generator.failure.phase_unfillable',
+  replacement_unavailable: 'generator.failure.replacement_unavailable',
   routine_invalid: 'generator.failure.routine_invalid',
   template_ambiguous: 'generator.failure.template_ambiguous',
   template_unavailable: 'generator.failure.template_unavailable',
@@ -50,71 +44,6 @@ function generationFailure(
     explanation_key: failureExplanationKeys[code],
     rejection_report: prepared?.rejection_report ?? [],
   };
-}
-
-function candidateAlternatives(
-  candidate: ScoredCandidate,
-  prepared: PreparedGeneration,
-  selectedExerciseIds: ReadonlySet<string>,
-): RoutineAlternative[] {
-  const alternatives: RoutineAlternative[] = [];
-
-  for (const relation of candidate.exercise.relations) {
-    if (
-      (relation.type !== 'alternative' && relation.type !== 'regression') ||
-      !relation.supported_modes.includes(prepared.input.mode)
-    ) {
-      continue;
-    }
-    const target = prepared.eligible_candidates.find(
-      (entry) =>
-        entry.exercise.id === relation.target_exercise_id &&
-        (relation.version_policy === 'compatible' ||
-          entry.exercise.version === relation.target_version),
-    );
-    if (!target) continue;
-    if (selectedExerciseIds.has(target.exercise.id)) continue;
-
-    alternatives.push({
-      relation_type: relation.type,
-      exercise_id: target.exercise.id,
-      exercise_version: target.exercise.version,
-    });
-  }
-
-  return alternatives;
-}
-
-function targetCoverage(
-  prepared: PreparedGeneration,
-  priorities: readonly TargetPriority[],
-  selectedExercises: readonly Exercise[],
-  selectableCandidates: readonly ScoredCandidate[],
-): TargetCoverage[] {
-  return prepared.input.target_regions.map((target, index) => {
-    const priority = priorities[index];
-    const exerciseIds = selectedExercises
-      .filter((exercise) => exerciseAddressesTarget(exercise, target))
-      .map((exercise) => exercise.id);
-    const addressed = exerciseIds.length > 0;
-    const hasEligibleCandidate = selectableCandidates.some((candidate) =>
-      exerciseAddressesTarget(candidate.exercise, target),
-    );
-
-    return {
-      region_slug: target.region_slug,
-      side: target.side,
-      priority_basis_points: priority?.priority_basis_points ?? 0,
-      high_priority: priority?.high_priority ?? false,
-      addressed,
-      exercise_ids: exerciseIds,
-      omission_reason_code: addressed
-        ? null
-        : hasEligibleCandidate
-          ? 'routine_constraints_limited_selection'
-          : 'no_eligible_candidate',
-    };
-  });
 }
 
 export function generateRoutine(
@@ -154,26 +83,14 @@ export function generateRoutine(
   const items: GeneratedRoutineItem[] = orderedSelections.map(
     (selection, order) => {
       const phase = prepared.template.phases[selection.phase_index];
-      const reasons = selectionReasons(selection.candidate);
-      return {
+      return composeRoutineItem(
+        selection.candidate,
+        phase?.phase ?? 'arrival',
         order,
-        phase: phase?.phase ?? 'arrival',
-        exercise_id: selection.candidate.exercise.id,
-        exercise_version: selection.candidate.exercise.version,
-        prescription: selection.prescription,
-        selection_reason_codes: reasons,
-        explanation_key: explanationKey(reasons),
-        explanation_reference_ids: explanationReferences(selection.candidate),
-        caution_rule_ids: selection.candidate.caution_rule_ids,
-        warning_keys: warningKeys(selection.candidate),
-        alternatives: candidateAlternatives(
-          selection.candidate,
-          prepared,
-          selectedExerciseIds,
-        ),
-        score: selection.candidate.score,
-        score_terms: selection.candidate.score_terms,
-      };
+        selection.prescription,
+        prepared,
+        selectedExerciseIds,
+      );
     },
   );
   const selectedExercises = orderedSelections.map(
@@ -182,7 +99,7 @@ export function generateRoutine(
   const selectableCandidates = scoredCandidates.filter(
     (candidate) => requiredVariant(candidate) === null,
   );
-  const coverage = targetCoverage(
+  const coverage = computeTargetCoverage(
     prepared,
     priorities,
     selectedExercises,
