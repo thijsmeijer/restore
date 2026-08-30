@@ -26,6 +26,7 @@ export function Screen({
       <ScrollView
         contentContainerStyle={styles.content}
         contentInsetAdjustmentBehavior="automatic"
+        keyboardShouldPersistTaps="handled"
         scrollEnabled={scrollEnabled}
       >
         {children}
