@@ -166,9 +166,34 @@ identifiers because their complete P0 catalogs are owned by CONTENT-002 and
 SAFE-001 respectively. The validator still rejects duplicates and cross-record
 references not present in the supplied catalogs.
 
-Routine-template records are rejected until their dedicated schema is
-implemented. This prevents an unvalidated template from entering a pack while
-keeping CONTENT-001 limited to exercise, body-region, and equipment contracts.
+## GEN-001 routine-template and preparation decisions
+
+Schema version 1 routine templates define an inclusive 2–90 minute range, one
+P0 mode, allowed non-blocked safety states, an intensity ceiling, ordered
+required or optional phases, and minimum/target/maximum phase shares expressed
+as basis points. Target shares total exactly 10,000; the minimum and maximum
+envelope must contain that total. The only P0 fallback policy is
+`explicit_failure`. Duplicate phases, impossible duration or phase bounds,
+unknown modes, incomplete review records, and a `gentle_only` template above
+`very_gentle` are rejected.
+
+The pure GEN-001 preparation boundary validates the immutable generation-input
+snapshot and exact content/rules/configuration/engine versions, enforces a
+blocked safety result, selects exactly one clinically reviewed compatible
+template, and applies hard candidate filters. An exercise is eligible only when
+the pack is clinically reviewed, its exact version has matching engineering and
+clinical review records, and it passes contraindication, avoidance, mode,
+environment, equipment stability, space, side, intensity, and minimum-duration
+checks. The input safety-rules version must exactly match the supplied versioned
+generation rules. Cautions remain attached to an eligible candidate as stable
+rule IDs. No preference or history value can override a rejection.
+
+GEN-001 returns a prepared eligible-candidate set or a stable explicit failure;
+it does not score, allocate phase duration, sequence exercises, write a routine,
+or expose generator UI. Those behaviors start in GEN-002. The bundled catalog
+still contains no templates and only draft exercises, so it intentionally
+cannot produce a daily-use routine until the exact template, safety rules, and
+exercise versions receive the required review.
 
 ## CONTENT-002 draft catalog decisions
 

@@ -32,7 +32,9 @@ export type ContentValidationIssueCode =
   | 'content_unknown_localization_key'
   | 'content_unknown_media_asset'
   | 'content_unknown_mode'
-  | 'content_unsupported_routine_template'
+  | 'content_template_duration_invalid'
+  | 'content_template_phase_budget_invalid'
+  | 'content_template_safety_invalid'
   | 'content_version_mismatch';
 
 export interface ContentValidationIssue {
@@ -421,16 +423,6 @@ function validateCatalog(catalog: ContentCatalog): ContentValidationIssue[] {
   const issues: ContentValidationIssue[] = [];
   const { manifest } = catalog;
 
-  if (manifest.routine_templates.length > 0) {
-    issues.push(
-      issue(
-        'content_unsupported_routine_template',
-        ['manifest', 'routine_templates', 0],
-        'Routine-template records are not supported by schema version 1 yet.',
-      ),
-    );
-  }
-
   const regionsBySlug = validateBodyRegions(
     catalog.body_regions,
     manifest.content_version,
@@ -499,6 +491,172 @@ function validateCatalog(catalog: ContentCatalog): ContentValidationIssue[] {
     }
   });
   const exercises = manifest.exercises;
+
+  pushUniqueKeyIssues(
+    manifest.routine_templates,
+    (template) => `${template.id}@${template.version}`,
+    ['manifest', 'routine_templates'],
+    'id',
+    'content_duplicate_id',
+    issues,
+  );
+  manifest.routine_templates.forEach((template, templateIndex) => {
+    const basePath = ['manifest', 'routine_templates', templateIndex] as const;
+    if (!modeSlugs.has(template.mode)) {
+      issues.push(
+        issue(
+          'content_unknown_mode',
+          [...basePath, 'mode'],
+          `Unknown mode: ${template.mode}.`,
+        ),
+      );
+    }
+    if (template.minimum_minutes > template.maximum_minutes) {
+      issues.push(
+        issue(
+          'content_template_duration_invalid',
+          [...basePath, 'minimum_minutes'],
+          'Template minimum duration cannot exceed its maximum duration.',
+        ),
+      );
+    }
+    pushDuplicateIssues(
+      template.allowed_safety_states,
+      [...basePath, 'allowed_safety_states'],
+      issues,
+    );
+    pushUniqueKeyIssues(
+      template.phases,
+      (phase) => phase.phase,
+      [...basePath, 'phases'],
+      'phase',
+      'content_duplicate_value',
+      issues,
+    );
+    const targetTotal = template.phases.reduce(
+      (total, phase) => total + phase.target_share_basis_points,
+      0,
+    );
+    const minimumTotal = template.phases.reduce(
+      (total, phase) => total + phase.minimum_share_basis_points,
+      0,
+    );
+    const maximumTotal = template.phases.reduce(
+      (total, phase) => total + phase.maximum_share_basis_points,
+      0,
+    );
+    template.phases.forEach((phase, phaseIndex) => {
+      if (
+        phase.minimum_share_basis_points > phase.target_share_basis_points ||
+        phase.target_share_basis_points > phase.maximum_share_basis_points ||
+        (phase.requirement === 'required' &&
+          phase.minimum_share_basis_points === 0)
+      ) {
+        issues.push(
+          issue(
+            'content_template_phase_budget_invalid',
+            [...basePath, 'phases', phaseIndex],
+            'Phase shares must be monotonic and required phases need a positive minimum.',
+          ),
+        );
+      }
+    });
+    if (
+      targetTotal !== 10_000 ||
+      minimumTotal > 10_000 ||
+      maximumTotal < 10_000
+    ) {
+      issues.push(
+        issue(
+          'content_template_phase_budget_invalid',
+          [...basePath, 'phases'],
+          'Template target shares must total 10000 basis points and the minimum/maximum envelope must contain that total.',
+        ),
+      );
+    }
+    if (
+      template.allowed_safety_states.includes('gentle_only') &&
+      template.intensity_ceiling !== 'very_gentle'
+    ) {
+      issues.push(
+        issue(
+          'content_template_safety_invalid',
+          [...basePath, 'intensity_ceiling'],
+          'A gentle-only template must use the very-gentle intensity ceiling.',
+        ),
+      );
+    }
+    if (
+      !reviewCompleteForStatus(
+        template.review,
+        template.status,
+        template.version,
+      )
+    ) {
+      issues.push(
+        issue(
+          'content_review_incomplete',
+          [...basePath, 'review'],
+          `Review records do not support status ${template.status} at version ${template.version}.`,
+        ),
+      );
+    }
+    if ((template.status === 'retired') !== (template.retired_at !== null)) {
+      issues.push(
+        issue(
+          'content_review_incomplete',
+          [...basePath, 'retired_at'],
+          'Only retired templates have a retirement timestamp.',
+        ),
+      );
+    }
+    if (
+      template.retired_at !== null &&
+      Date.parse(template.retired_at) < Date.parse(template.created_at)
+    ) {
+      issues.push(
+        issue(
+          'content_review_incomplete',
+          [...basePath, 'retired_at'],
+          'A template cannot retire before it was created.',
+        ),
+      );
+    }
+    if (Date.parse(template.created_at) > Date.parse(manifest.created_at)) {
+      issues.push(
+        issue(
+          'content_review_incomplete',
+          [...basePath, 'created_at'],
+          'A template cannot be created after its content pack.',
+        ),
+      );
+    }
+    if (
+      manifest.review_status === 'clinical_reviewed' &&
+      template.status !== 'clinical_reviewed'
+    ) {
+      issues.push(
+        issue(
+          'content_review_incomplete',
+          [...basePath, 'status'],
+          'A clinically reviewed pack may contain only clinically reviewed templates.',
+        ),
+      );
+    }
+    if (
+      manifest.review_status === 'engineering_reviewed' &&
+      template.status !== 'engineering_reviewed' &&
+      template.status !== 'clinical_reviewed'
+    ) {
+      issues.push(
+        issue(
+          'content_review_incomplete',
+          [...basePath, 'status'],
+          'An engineering-reviewed pack cannot contain draft or retired templates.',
+        ),
+      );
+    }
+  });
   pushUniqueKeyIssues(
     exercises,
     (exercise) => `${exercise.id}@${exercise.version}`,
