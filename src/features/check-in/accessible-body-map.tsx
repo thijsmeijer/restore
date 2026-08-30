@@ -67,7 +67,7 @@ const FRONT_TARGETS: readonly BodyMapTarget[] = [
   target(
     'front-right-hand',
     'Wrist, hand, and fingers',
-    ['wrist', 'hand_fingers'],
+    ['wrist_hand_fingers'],
     'right',
     23,
     225,
@@ -75,7 +75,7 @@ const FRONT_TARGETS: readonly BodyMapTarget[] = [
   target(
     'front-left-hand',
     'Wrist, hand, and fingers',
-    ['wrist', 'hand_fingers'],
+    ['wrist_hand_fingers'],
     'left',
     157,
     225,
@@ -172,7 +172,7 @@ const BACK_TARGETS: readonly BodyMapTarget[] = [
   target(
     'back-left-hand',
     'Wrist, hand, and fingers',
-    ['wrist', 'hand_fingers'],
+    ['wrist_hand_fingers'],
     'left',
     23,
     225,
@@ -180,7 +180,7 @@ const BACK_TARGETS: readonly BodyMapTarget[] = [
   target(
     'back-right-hand',
     'Wrist, hand, and fingers',
-    ['wrist', 'hand_fingers'],
+    ['wrist_hand_fingers'],
     'right',
     157,
     225,

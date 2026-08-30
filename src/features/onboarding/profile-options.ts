@@ -147,12 +147,26 @@ export const bodyRegionOptions = [
   },
   { slug: 'elbow', label: 'Elbow', laterality: 'paired', surface: 'both' },
   { slug: 'forearm', label: 'Forearm', laterality: 'paired', surface: 'both' },
-  { slug: 'wrist', label: 'Wrist', laterality: 'paired', surface: 'detail' },
+  {
+    slug: 'wrist_hand_fingers',
+    label: 'Wrist, hand, and fingers',
+    laterality: 'paired',
+    surface: 'detail',
+    selectable: true,
+  },
+  {
+    slug: 'wrist',
+    label: 'Wrist',
+    laterality: 'paired',
+    surface: 'detail',
+    selectable: false,
+  },
   {
     slug: 'hand_fingers',
     label: 'Hand and fingers',
     laterality: 'paired',
     surface: 'detail',
+    selectable: false,
   },
   {
     slug: 'thoracic_spine',
@@ -219,6 +233,10 @@ export const bodyRegionOptions = [
     surface: 'detail',
   },
 ] as const;
+
+export const selectableBodyRegionOptions = bodyRegionOptions.filter(
+  (option) => !('selectable' in option) || option.selectable,
+);
 
 export type BodyRegionSlug = (typeof bodyRegionOptions)[number]['slug'];
 export type BodySide = 'central' | 'left' | 'right' | 'bilateral';

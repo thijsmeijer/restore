@@ -10,7 +10,7 @@ import {
   CheckInFormScreen,
 } from '@/features/check-in/check-in-form-screen';
 import type { UserProfile } from '@/features/onboarding/profile';
-import { bodyRegionOptions } from '@/features/onboarding/profile-options';
+import { selectableBodyRegionOptions } from '@/features/onboarding/profile-options';
 
 const profile: UserProfile = {
   id: '00000000000000000000000000',
@@ -54,7 +54,7 @@ describe('check-in form', () => {
     );
 
     expect([...mappedSlugs].sort()).toEqual(
-      bodyRegionOptions.map((region) => region.slug).sort(),
+      selectableBodyRegionOptions.map((region) => region.slug).sort(),
     );
   });
 
@@ -136,7 +136,7 @@ describe('check-in form', () => {
     expect(onComplete).toHaveBeenCalledTimes(1);
   });
 
-  it('selects a mapped focus area immediately without requiring a rating', async () => {
+  it('selects the combined wrist, hand, and fingers area without another choice', async () => {
     const onChange = jest.fn();
     const screen = await render(
       <BodyObservationSelector onChange={onChange} value={[]} />,
@@ -146,13 +146,16 @@ describe('check-in form', () => {
       screen.getByRole('button', { name: 'Choose focus areas' }),
     );
     await fireEvent.press(
-      screen.getByRole('button', { name: 'Right elbow, front' }),
+      screen.getByRole('button', {
+        name: 'Right wrist, hand, and fingers, front',
+      }),
     );
+    expect(screen.queryByText('Choose wrist, hand, and fingers')).toBeNull();
     expect(screen.queryByText('Stiffness')).toBeNull();
 
     expect(onChange).toHaveBeenCalledWith([
       {
-        regionSlug: 'elbow',
+        regionSlug: 'wrist_hand_fingers',
         side: 'right',
         stiffness: null,
         soreness: null,

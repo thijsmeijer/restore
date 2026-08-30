@@ -19,6 +19,7 @@ import {
 import type { CheckInRegionInput } from '@/features/check-in/check-in';
 import {
   bodyRegionOptions,
+  selectableBodyRegionOptions,
   type BodyRegionSlug,
   type BodySide,
 } from '@/features/onboarding/profile-options';
@@ -100,7 +101,13 @@ export function BodyObservationSelector({
   const editingSelection = value.find(
     (selection) => selection.regionSlug === editingSlug,
   );
-  const visibleRegions = [...bodyRegionOptions]
+  const availableRegions = bodyRegionOptions.filter(
+    (option) =>
+      selectableBodyRegionOptions.some(
+        (selectable) => selectable.slug === option.slug,
+      ) || value.some((selection) => selection.regionSlug === option.slug),
+  );
+  const visibleRegions = [...availableRegions]
     .filter(
       (option) =>
         option.surface === bodyView ||

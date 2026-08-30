@@ -13,6 +13,7 @@ import { useRestoreTheme } from '@/design-system/use-theme';
 import type { BodyBaselineSelection } from '@/features/onboarding/profile';
 import {
   bodyRegionOptions,
+  selectableBodyRegionOptions,
   type BodyRegionSlug,
   type BodySide,
 } from '@/features/onboarding/profile-options';
@@ -54,7 +55,13 @@ export function BodyBaselineSelector({
   const editingSelection = value.find(
     (selection) => selection.regionSlug === editingSlug,
   );
-  const visibleRegions = bodyRegionOptions.filter(
+  const availableRegions = bodyRegionOptions.filter(
+    (option) =>
+      selectableBodyRegionOptions.some(
+        (selectable) => selectable.slug === option.slug,
+      ) || value.some((selection) => selection.regionSlug === option.slug),
+  );
+  const visibleRegions = availableRegions.filter(
     (option) =>
       option.surface === bodyView ||
       option.surface === 'both' ||
