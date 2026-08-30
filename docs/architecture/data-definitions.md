@@ -109,6 +109,12 @@ Existing slugs may be retired but never reassigned.
 - Safety rules version and ordered reason-code list.
 - Creation source and timestamps.
 
+`capture_status` distinguishes a durable `captured` form from a `submitted`
+check-in. CHK-001 may persist `captured` records with null safety fields while
+the safety classifier is not yet shipped. Captured records are never eligible
+for generation. SAFE-001 owns the atomic transition that stores the safety
+result, rules version, and ordered reason codes before setting `submitted`.
+
 A submitted check-in is immutable. Editing creates a replacement linked by
 `supersedes_check_in_id`; generated routines retain the original snapshot.
 

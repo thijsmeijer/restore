@@ -67,7 +67,12 @@ These decisions supersede contradictory labels elsewhere in the roadmap:
 
 ## Release-wide acceptance criteria
 
-- A normal check-in is comfortably achievable in under 30 seconds.
+- A normal check-in is comfortably achievable in under 30 seconds, and an
+  extended check-in with optional body or training detail stays under one
+  minute.
+- At standard Dynamic Type, the main check-in path uses compact guided states
+  without vertical scrolling. Accessibility text sizes may scroll rather than
+  clip or hide controls, and optional detail sheets may scroll.
 - A recommended routine can start within three meaningful taps from Today.
 - Normal local generation targets under 300 ms and returns within ±10% of the
   requested duration or one indivisible short exercise.

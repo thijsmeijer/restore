@@ -20,6 +20,7 @@ export function ProfileNavigation() {
       </Stack.Protected>
       <Stack.Protected guard={guards.application}>
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="check-in" />
         <Stack.Screen name="profile" />
       </Stack.Protected>
     </Stack>

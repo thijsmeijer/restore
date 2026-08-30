@@ -633,7 +633,7 @@ AI must remain behind the curated exercise library and safety engine.
 
 | ID | Priority | User story | Acceptance criteria |
 |---|---:|---|---|
-| CHK-001 | P0 | As the user, I can complete a quick check-in in under 30 seconds. | Body, time, readiness, and training context can be logged from one screen. |
+| CHK-001 | P0 | As the user, I can complete a quick check-in in under 30 seconds. | A compact guided flow captures routine intent, time, readiness, optional body focus, environment/equipment, and optional training context. At standard Dynamic Type the main path does not vertically scroll; optional detail sheets may scroll. |
 | CHK-002 | P0 | As the user, I can tap body regions on front and back diagrams. | Each selected region visibly changes state and supports side selection. |
 | CHK-003 | P0 | As the user, I can rate stiffness, soreness, and discomfort separately. | Each dimension uses a consistent scale and is optional. |
 | CHK-004 | P0 | As the user, I can choose how much time I have. | Values from 2–90 minutes are supported; recent values appear as shortcuts. |

@@ -7,6 +7,7 @@ import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { EmptyState } from '@/components/empty-state';
 import { ErrorState } from '@/components/error-state';
+import { NumericStepper } from '@/components/numeric-stepper';
 import { SegmentedControl } from '@/components/segmented-control';
 import { Sheet } from '@/components/sheet';
 import { Slider } from '@/components/slider';
@@ -99,6 +100,25 @@ describe('UI component foundation', () => {
 
     expect(onChange).toHaveBeenNthCalledWith(1, 4);
     expect(onChange).toHaveBeenNthCalledWith(2, 2);
+  });
+
+  it('distinguishes an unset rating from an explicit zero without a drag gesture', async () => {
+    const onChange = jest.fn();
+    const screen = await render(
+      <NumericStepper
+        label="Stiffness"
+        maximum={10}
+        minimum={0}
+        onChange={onChange}
+        value={null}
+      />,
+    );
+
+    screen.getByLabelText('Stiffness: Not rated');
+    await fireEvent.press(
+      screen.getByRole('button', { name: 'Increase Stiffness' }),
+    );
+    expect(onChange).toHaveBeenCalledWith(0);
   });
 
   it('keeps slider accessibility actions inside their bounds', async () => {
