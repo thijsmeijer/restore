@@ -1,4 +1,10 @@
-import { Pressable, StyleSheet, Text } from 'react-native';
+import {
+  Pressable,
+  StyleSheet,
+  type StyleProp,
+  Text,
+  type ViewStyle,
+} from 'react-native';
 
 import { radius, spacing, typography } from '@/design-system/tokens';
 import { useRestoreTheme } from '@/design-system/use-theme';
@@ -9,6 +15,7 @@ type ButtonProps = {
   accessibilityHint?: string;
   disabled?: boolean;
   variant?: 'primary' | 'secondary' | 'destructive';
+  containerStyle?: StyleProp<ViewStyle>;
 };
 
 export function Button({
@@ -17,6 +24,7 @@ export function Button({
   accessibilityHint,
   disabled = false,
   variant = 'primary',
+  containerStyle,
 }: ButtonProps) {
   const { colors } = useRestoreTheme();
 
@@ -56,6 +64,7 @@ export function Button({
           borderColor,
           opacity: pressed && !disabled && variant !== 'primary' ? 0.82 : 1,
         },
+        containerStyle,
       ]}
     >
       <Text style={[styles.label, { color: foregroundColor }]}>{label}</Text>

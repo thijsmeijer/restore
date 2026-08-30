@@ -41,6 +41,7 @@ type BodyObservationSelectorProps = {
   readonly value: readonly CheckInRegionInput[];
   readonly onChange: (value: readonly CheckInRegionInput[]) => void;
   readonly baselineRegionSlugs?: readonly BodyRegionSlug[];
+  readonly compact?: boolean;
 };
 
 function sideLabel(side: BodySide): string {
@@ -66,6 +67,7 @@ export function BodyObservationSelector({
   value,
   onChange,
   baselineRegionSlugs = [],
+  compact = false,
 }: BodyObservationSelectorProps) {
   const { colors } = useRestoreTheme();
   const [visible, setVisible] = useState(false);
@@ -135,17 +137,29 @@ export function BodyObservationSelector({
   return (
     <>
       <View style={styles.summaryRow}>
-        <Text style={[styles.helper, { color: colors.textMuted }]}>
-          Add only the areas you want to rate today. Each rating is optional.
-        </Text>
+        {!compact ? (
+          <Text style={[styles.helper, { color: colors.textMuted }]}>
+            Add only the areas you want to rate today. Each rating is optional.
+          </Text>
+        ) : null}
         <Badge
-          accessibilityLabel={`${value.length} body areas rated`}
-          label={`${value.length} rated`}
+          accessibilityLabel={
+            compact && value.length === 0
+              ? 'No body focus areas'
+              : `${value.length} body areas rated`
+          }
+          label={
+            compact
+              ? value.length === 0
+                ? 'No focus area'
+                : `${value.length} ${value.length === 1 ? 'focus area' : 'focus areas'}`
+              : `${value.length} rated`
+          }
           tone={value.length > 0 ? 'accent' : 'neutral'}
         />
       </View>
 
-      {value.length > 0 ? (
+      {value.length > 0 && !compact ? (
         <View style={styles.selectedList}>
           {value.map((selection) => {
             const region = bodyRegionOptions.find(
@@ -184,7 +198,13 @@ export function BodyObservationSelector({
       ) : null}
 
       <Button
-        label={value.length === 0 ? 'Add a body area' : 'Add another area'}
+        label={
+          value.length === 0
+            ? 'Add a focus area'
+            : compact
+              ? 'Review focus areas'
+              : 'Add another area'
+        }
         onPress={() => setVisible(true)}
         variant="secondary"
       />
@@ -251,6 +271,7 @@ export function BodyObservationSelector({
               onChange={(stiffness) => setDraft({ ...draft, stiffness })}
               value={draft.stiffness}
               valueSuffix=" of 10"
+              quickValues={[0, 3, 5, 7, 10]}
             />
             <NumericStepper
               label="Soreness"
@@ -259,6 +280,7 @@ export function BodyObservationSelector({
               onChange={(soreness) => setDraft({ ...draft, soreness })}
               value={draft.soreness}
               valueSuffix=" of 10"
+              quickValues={[0, 3, 5, 7, 10]}
             />
             <NumericStepper
               label="Discomfort"
@@ -267,6 +289,7 @@ export function BodyObservationSelector({
               onChange={(discomfort) => setDraft({ ...draft, discomfort })}
               value={draft.discomfort}
               valueSuffix=" of 10"
+              quickValues={[0, 3, 5, 7, 10]}
             />
             <Button
               disabled={!hasObservation}

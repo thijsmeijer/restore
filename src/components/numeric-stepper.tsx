@@ -12,6 +12,7 @@ type NumericStepperProps = {
   readonly nullLabel?: string;
   readonly valueSuffix?: string;
   readonly allowClear?: boolean;
+  readonly quickValues?: readonly number[];
 };
 
 export function NumericStepper({
@@ -23,6 +24,7 @@ export function NumericStepper({
   nullLabel = 'Not rated',
   valueSuffix = '',
   allowClear = true,
+  quickValues = [],
 }: NumericStepperProps) {
   const { colors } = useRestoreTheme();
   const decrementDisabled = value === null || value <= minimum;
@@ -32,6 +34,40 @@ export function NumericStepper({
   return (
     <View style={styles.container}>
       <Text style={[styles.label, { color: colors.text }]}>{label}</Text>
+      {quickValues.length > 0 ? (
+        <View
+          accessibilityLabel={`${label} quick values`}
+          accessibilityRole="radiogroup"
+          style={styles.quickValues}
+        >
+          {quickValues.map((quickValue) => {
+            const selected = value === quickValue;
+            return (
+              <Pressable
+                accessibilityLabel={`${label} ${quickValue}${valueSuffix}`}
+                accessibilityRole="radio"
+                accessibilityState={{ selected }}
+                key={quickValue}
+                onPress={() => onChange(quickValue)}
+                style={({ pressed }) => [
+                  styles.quickValue,
+                  {
+                    backgroundColor: selected
+                      ? colors.accentMuted
+                      : colors.surfaceMuted,
+                    borderColor: selected ? colors.accent : colors.border,
+                    opacity: pressed ? 0.75 : 1,
+                  },
+                ]}
+              >
+                <Text style={[styles.quickValueLabel, { color: colors.text }]}>
+                  {quickValue}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      ) : null}
       <View style={styles.controls}>
         <Pressable
           accessibilityLabel={`Decrease ${label}`}
@@ -112,6 +148,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     gap: spacing.sm,
+  },
+  quickValues: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  quickValue: {
+    alignItems: 'center',
+    borderRadius: radius.pill,
+    borderWidth: StyleSheet.hairlineWidth,
+    justifyContent: 'center',
+    minHeight: 44,
+    minWidth: 44,
+    paddingHorizontal: spacing.sm,
+  },
+  quickValueLabel: {
+    fontSize: typography.label,
+    fontWeight: '700',
   },
   adjustButton: {
     alignItems: 'center',

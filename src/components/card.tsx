@@ -4,13 +4,16 @@ import { StyleSheet, View } from 'react-native';
 import { radius, spacing } from '@/design-system/tokens';
 import { useRestoreTheme } from '@/design-system/use-theme';
 
-export function Card({ children }: PropsWithChildren) {
+type CardProps = PropsWithChildren<{ compact?: boolean }>;
+
+export function Card({ children, compact = false }: CardProps) {
   const { colors } = useRestoreTheme();
 
   return (
     <View
       style={[
         styles.card,
+        compact ? styles.compact : null,
         { backgroundColor: colors.surface, borderColor: colors.border },
       ]}
     >
@@ -25,5 +28,8 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     gap: spacing.sm,
     padding: spacing.lg,
+  },
+  compact: {
+    padding: spacing.md,
   },
 });

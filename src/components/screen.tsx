@@ -7,24 +7,35 @@ import { useRestoreTheme } from '@/design-system/use-theme';
 
 type ScreenProps = PropsWithChildren<{
   scrollEnabled?: boolean;
+  bottomSafeArea?: boolean;
+  compact?: boolean;
   testID?: string;
 }>;
 
 export function Screen({
   children,
   scrollEnabled = true,
+  bottomSafeArea = false,
+  compact = false,
   testID,
 }: ScreenProps) {
   const { colors } = useRestoreTheme();
 
   return (
     <SafeAreaView
-      edges={['top', 'left', 'right']}
+      edges={
+        bottomSafeArea
+          ? ['top', 'bottom', 'left', 'right']
+          : ['top', 'left', 'right']
+      }
       style={[styles.safeArea, { backgroundColor: colors.background }]}
       {...(testID ? { testID } : {})}
     >
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[
+          styles.content,
+          compact ? styles.compact : null,
+        ]}
         contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled"
         scrollEnabled={scrollEnabled}
@@ -44,5 +55,8 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.xxl,
+  },
+  compact: {
+    paddingBottom: spacing.md,
   },
 });

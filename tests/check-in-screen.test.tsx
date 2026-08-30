@@ -2,7 +2,10 @@ import { fireEvent, render, waitFor } from '@testing-library/react-native';
 
 import { BodyObservationSelector } from '@/features/check-in/body-observation-selector';
 import type { CheckIn, CheckInInput } from '@/features/check-in/check-in';
-import { CheckInFormScreen } from '@/features/check-in/check-in-form-screen';
+import {
+  checkInNeedsScrolling,
+  CheckInFormScreen,
+} from '@/features/check-in/check-in-form-screen';
 import type { UserProfile } from '@/features/onboarding/profile';
 
 const profile: UserProfile = {
@@ -34,6 +37,12 @@ function savedCheckIn(input: CheckInInput): CheckIn {
 }
 
 describe('check-in form', () => {
+  it('keeps the standard flow fixed while allowing large text to scroll', () => {
+    expect(checkInNeedsScrolling(1)).toBe(false);
+    expect(checkInNeedsScrolling(1.2)).toBe(false);
+    expect(checkInNeedsScrolling(1.21)).toBe(true);
+  });
+
   it('captures a fast context snapshot with profile-aware defaults', async () => {
     const onComplete = jest.fn();
     const onSave = jest.fn(async (input: CheckInInput) => ({
@@ -52,28 +61,49 @@ describe('check-in form', () => {
       screen.getByRole('radio', { name: 'Daily restore' }).props
         .accessibilityState,
     ).toEqual({ selected: true });
-    screen.getByText('Mat');
+    expect(screen.getByLabelText('Step 1 of 4')).toHaveAccessibilityValue({
+      min: 1,
+      max: 4,
+      now: 1,
+    });
+    await fireEvent.press(
+      screen.getByRole('radio', { name: 'After training' }),
+    );
+    await fireEvent.press(screen.getByRole('radio', { name: '10 min' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Continue' }));
 
+    screen.getByRole('header', { name: 'How are you moving?' });
+    screen.getByLabelText('Step 2 of 4');
+    await fireEvent.press(screen.getByRole('radio', { name: 'Good' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Continue' }));
+
+    screen.getByRole('header', { name: 'What can you use?' });
+    screen.getByText('Mat');
     await fireEvent.press(screen.getByRole('radio', { name: 'Home' }));
     screen.getByText('Mat');
-    await fireEvent.press(screen.getByRole('radio', { name: '10 min' }));
-    await fireEvent.press(screen.getByRole('radio', { name: 'Good' }));
     await fireEvent.press(screen.getByRole('radio', { name: 'Gym' }));
-    screen.getByText('None selected');
-    await fireEvent.press(screen.getByRole('radio', { name: 'Completed' }));
+    screen.getByText('No equipment selected');
+    await fireEvent.press(screen.getByRole('button', { name: 'Continue' }));
+
+    screen.getByRole('header', { name: 'Any training today?' });
+    screen.getByLabelText('Step 4 of 4');
+    expect(
+      screen.getByRole('radio', { name: 'Completed' }).props.accessibilityState,
+    ).toEqual({ selected: true });
     await fireEvent.press(screen.getByRole('radio', { name: 'Hard' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Add a note' }));
     await fireEvent.changeText(
       screen.getByLabelText('Check-in note'),
       '  Wrists felt worked.  ',
     );
+    await fireEvent.press(screen.getByRole('button', { name: 'Done' }));
     await fireEvent.press(
       screen.getByRole('button', { name: 'Save check-in' }),
     );
 
     await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
     expect(onSave).toHaveBeenCalledWith({
-      mode: 'daily_restore',
+      mode: 'post_workout_reset',
       availableMinutes: 10,
       readiness: 4,
       environment: 'gym',
@@ -92,12 +122,12 @@ describe('check-in form', () => {
     );
 
     await fireEvent.press(
-      screen.getByRole('button', { name: 'Add a body area' }),
+      screen.getByRole('button', { name: 'Add a focus area' }),
     );
     await fireEvent.press(screen.getByRole('checkbox', { name: 'Neck' }));
     await fireEvent.press(screen.getByRole('radio', { name: 'Right' }));
     await fireEvent.press(
-      screen.getByRole('button', { name: 'Increase Stiffness' }),
+      screen.getByRole('radio', { name: 'Stiffness 0 of 10' }),
     );
     await fireEvent.press(screen.getByRole('button', { name: 'Add area' }));
 
