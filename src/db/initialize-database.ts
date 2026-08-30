@@ -1,5 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
+import { installBundledContent } from '@/content/install-bundled-content';
 import type { DatabaseConnection } from '@/db/database';
 import { ExpoSQLiteConnection } from '@/db/expo-sqlite-adapter';
 import { migrations } from '@/db/migrations';
@@ -45,6 +46,7 @@ export async function initializeDatabaseConnection(
   }
 
   await runMigrations(connection, migrations, now);
+  await installBundledContent(connection, now);
 
   const integrity =
     await connection.getFirstAsync<IntegrityCheckRow>('PRAGMA quick_check');

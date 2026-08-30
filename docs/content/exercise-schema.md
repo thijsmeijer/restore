@@ -194,9 +194,12 @@ breathing, thoracic rotation, scapular control, wrist range exploration, and hip
 rotation. They are seed examples, not active guidance: the pack and every
 exercise remain `draft`, reviewer fields are null, contraindication lists await
 reviewed SAFE-001 metadata, no media is claimed, and no draft is allowed in the
-`pain_aware_gentle` mode. Localization references are registered for validation,
-but reviewed user-facing copy and clinical approval are required before any
-exercise status can advance.
+`pain_aware_gentle` mode. Localization references are registered for validation.
+LIB-001 adds complete English draft copy for product review and validates
+one-to-one copy coverage before SQLite installation, but the copy is not
+clinically approved. Reviewed user-facing copy, contraindications, and clinical
+approval are required before any exercise status can advance or become eligible
+for a daily-use routine.
 
 ## Minimal illustrative record
 

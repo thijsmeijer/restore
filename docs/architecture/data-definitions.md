@@ -272,6 +272,20 @@ and links to it.
 - Avoid changes are explicit user actions; inferred behavior never creates a
   permanent avoid.
 
+Schema version 6 installs the LIB-001 content tables and the early development
+preference shape. Schema version 7 adds the canonical independent favorite and
+avoid state, optional avoid expiry, owner, and created/updated timestamps in an
+additive table. A schema-6 preference remains readable until an explicit user
+change writes its authoritative schema-7 state; no owner data is rewritten or
+discarded by the migration. The current UI creates only explicit `permanent`
+avoids and can restore them to `none`; the schema retains `temporary` for the
+later in-session stop flow. Personal cues and manual priority remain deferred.
+
+The same schema installs the validated bundled content pack and exact resolved
+exercise payloads atomically. Startup reuses an identical installed version but
+fails closed if its checksum or an immutable exercise payload differs. SQLite,
+not the bundled source files or UI state, is the runtime source of truth.
+
 ### `exercise_response_stats`
 
 Rebuildable derived data keyed by exercise identity, region, and P0 context:
