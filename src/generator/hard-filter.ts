@@ -5,6 +5,7 @@ import type {
   GenerationTarget,
 } from '@/generator/input-schema';
 import { estimateMinimumExerciseSeconds } from '@/generator/duration';
+import { exerciseAddressesTarget } from '@/generator/targeting';
 import type {
   CandidateRejection,
   CandidateRejectionCode,
@@ -101,16 +102,6 @@ function equipmentRejections(
   return reasons;
 }
 
-function effectSideMatchesTarget(
-  effectSide: Exercise['effects'][number]['side'],
-  targetSide: GenerationTarget['side'],
-): boolean {
-  if (effectSide === 'central') return targetSide === 'central';
-  if (effectSide === 'bilateral') return targetSide !== 'central';
-
-  return effectSide === targetSide;
-}
-
 function sideIncompatibilityReference(
   exercise: Exercise,
   targets: GenerationInput['target_regions'],
@@ -120,14 +111,14 @@ function sideIncompatibilityReference(
       (effect) => effect.region_slug === target.region_slug,
     ),
   );
-  if (matchingRegionTargets.length === 0) return null;
+  if (matchingRegionTargets.length === 0) {
+    return exercise.prescription.side_mode === 'unilateral'
+      ? 'unilateral_target_required'
+      : null;
+  }
 
   const hasCompatibleTarget = matchingRegionTargets.some((target) =>
-    exercise.effects.some(
-      (effect) =>
-        effect.region_slug === target.region_slug &&
-        effectSideMatchesTarget(effect.side, target.side),
-    ),
+    exerciseAddressesTarget(exercise, target),
   );
   if (hasCompatibleTarget) return null;
 

@@ -34,6 +34,7 @@ export type ContentValidationIssueCode =
   | 'content_unknown_mode'
   | 'content_template_duration_invalid'
   | 'content_template_phase_budget_invalid'
+  | 'content_template_phase_unsupported'
   | 'content_template_safety_invalid'
   | 'content_version_mismatch';
 
@@ -550,7 +551,9 @@ function validateCatalog(catalog: ContentCatalog): ContentValidationIssue[] {
         phase.minimum_share_basis_points > phase.target_share_basis_points ||
         phase.target_share_basis_points > phase.maximum_share_basis_points ||
         (phase.requirement === 'required' &&
-          phase.minimum_share_basis_points === 0)
+          phase.minimum_share_basis_points === 0) ||
+        (phase.requirement === 'optional' &&
+          phase.minimum_share_basis_points !== 0)
       ) {
         issues.push(
           issue(
@@ -574,6 +577,31 @@ function validateCatalog(catalog: ContentCatalog): ContentValidationIssue[] {
         ),
       );
     }
+    const intensityRank = {
+      very_gentle: 0,
+      gentle: 1,
+      moderate: 2,
+    } as const;
+    template.phases.forEach((phase, phaseIndex) => {
+      if (phase.requirement !== 'required') return;
+      const hasSupportingExercise = manifest.exercises.some(
+        (exercise) =>
+          exercise.status !== 'retired' &&
+          exercise.allowed_modes.includes(template.mode) &&
+          exercise.phases.includes(phase.phase) &&
+          intensityRank[exercise.intensity] <=
+            intensityRank[template.intensity_ceiling],
+      );
+      if (!hasSupportingExercise) {
+        issues.push(
+          issue(
+            'content_template_phase_unsupported',
+            [...basePath, 'phases', phaseIndex, 'phase'],
+            `Required phase ${phase.phase} has no compatible exercise in this pack.`,
+          ),
+        );
+      }
+    });
     if (
       template.allowed_safety_states.includes('gentle_only') &&
       template.intensity_ceiling !== 'very_gentle'
@@ -1013,7 +1041,8 @@ function validateCatalog(catalog: ContentCatalog): ContentValidationIssue[] {
       }
       if (
         entry.caution_effect?.type === 'dose_cap' &&
-        (entry.caution_effect.maximum > exercise.prescription.maximum ||
+        (entry.caution_effect.maximum < exercise.prescription.minimum ||
+          entry.caution_effect.maximum > exercise.prescription.maximum ||
           entry.caution_effect.max_sets >
             exercise.dosage_limits.max_sets_per_routine)
       ) {

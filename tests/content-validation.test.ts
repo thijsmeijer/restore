@@ -54,7 +54,7 @@ function validExercise(): Exercise {
       side_mode: 'central',
     },
     intensity: 'gentle',
-    phases: ['warm_motion', 'targeted_mobility'],
+    phases: ['arrival', 'warm_motion', 'targeted_mobility'],
     movement_patterns: ['rotation'],
     effects: [
       {
@@ -277,6 +277,13 @@ describe('content validation', () => {
 
     expect(issueCodes(catalog)).toContain('content_caution_effect_required');
 
+    contraindication.caution_effect = {
+      type: 'dose_cap',
+      maximum: 2,
+      max_sets: 1,
+    };
+    expect(issueCodes(catalog)).toContain('content_dosage_bounds_invalid');
+
     contraindication.severity = 'hard_exclusion';
     contraindication.caution_effect = {
       type: 'user_warning',
@@ -358,11 +365,14 @@ describe('content validation', () => {
     template.mode = 'unknown_mode';
     template.phases[0]!.target_share_basis_points = 1_000;
     template.allowed_safety_states = ['gentle_only'];
+    template.phases[0]!.requirement = 'optional';
+    template.phases[1]!.phase = 'reassessment';
     expect(issueCodes(catalog)).toEqual(
       expect.arrayContaining([
         'content_template_duration_invalid',
         'content_unknown_mode',
         'content_template_phase_budget_invalid',
+        'content_template_phase_unsupported',
         'content_template_safety_invalid',
       ]),
     );

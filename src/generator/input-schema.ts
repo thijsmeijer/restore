@@ -13,14 +13,14 @@ import {
   utcTimestampSchema,
 } from '@/content/schemas';
 
-export const generatorEngineVersion = '0.1.0' as const;
+export const generatorEngineVersion = '0.2.0' as const;
 
 const generationTargetSchema = z
   .strictObject({
     region_slug: canonicalSlugSchema,
     side: bodySideSchema,
     maximum_rating: z.number().int().min(0).max(10).nullable(),
-    symptom_qualities: z.array(canonicalSlugSchema).readonly(),
+    symptom_qualities: z.array(canonicalSlugSchema).max(32).readonly(),
   })
   .readonly();
 
@@ -36,11 +36,11 @@ const generationPreferenceSchema = z
 const responseAggregateSchema = z
   .strictObject({
     exercise_id: stableIdSchema,
-    helpful_count: z.number().int().nonnegative(),
-    neutral_count: z.number().int().nonnegative(),
-    uncomfortable_count: z.number().int().nonnegative(),
-    skipped_count: z.number().int().nonnegative(),
-    replaced_count: z.number().int().nonnegative(),
+    helpful_count: z.number().int().min(0).max(1_000_000),
+    neutral_count: z.number().int().min(0).max(1_000_000),
+    uncomfortable_count: z.number().int().min(0).max(1_000_000),
+    preference_skip_count: z.number().int().min(0).max(1_000_000),
+    preference_replacement_count: z.number().int().min(0).max(1_000_000),
   })
   .readonly();
 
@@ -54,28 +54,29 @@ const trainingContextSchema = z
 
 export const generationInputSchema = z
   .strictObject({
-    schema_version: z.literal(1),
+    schema_version: z.literal(2),
+    routine_id: stableIdSchema,
     check_in_id: stableIdSchema,
     generated_at: utcTimestampSchema,
     mode: canonicalSlugSchema,
     available_minutes: z.number().int().min(2).max(90),
     environment: environmentSchema,
     available_space: spaceRequirementSchema,
-    available_equipment: z.array(canonicalSlugSchema).readonly(),
-    unstable_equipment: z.array(canonicalSlugSchema).readonly(),
+    available_equipment: z.array(canonicalSlugSchema).max(64).readonly(),
+    unstable_equipment: z.array(canonicalSlugSchema).max(64).readonly(),
     safety_state: generatorSafetyStateSchema,
     safety_rules_version: canonicalSlugSchema,
-    safety_matched_rule_ids: z.array(canonicalSlugSchema).readonly(),
-    safety_reason_codes: z.array(canonicalSlugSchema).readonly(),
-    target_regions: z.array(generationTargetSchema).readonly(),
+    safety_matched_rule_ids: z.array(canonicalSlugSchema).max(64).readonly(),
+    safety_reason_codes: z.array(canonicalSlugSchema).max(64).readonly(),
+    target_regions: z.array(generationTargetSchema).max(64).readonly(),
     intent: intendedEffectSchema.nullable(),
     recent_major_trauma: z.boolean(),
-    restricted_demand_flags: z.array(demandFlagSchema).readonly(),
-    profile_goal_slugs: z.array(canonicalSlugSchema).readonly(),
+    restricted_demand_flags: z.array(demandFlagSchema).max(9).readonly(),
+    profile_goal_slugs: z.array(canonicalSlugSchema).max(64).readonly(),
     training_context: trainingContextSchema.nullable(),
-    preferences: z.array(generationPreferenceSchema).readonly(),
-    response_aggregates: z.array(responseAggregateSchema).readonly(),
-    recent_exercise_ids: z.array(stableIdSchema).readonly(),
+    preferences: z.array(generationPreferenceSchema).max(1_000).readonly(),
+    response_aggregates: z.array(responseAggregateSchema).max(1_000).readonly(),
+    recent_exercise_ids: z.array(stableIdSchema).max(1_000).readonly(),
     content_version: contentVersionSchema,
     engine_version: contentVersionSchema,
     rules_version: canonicalSlugSchema,
