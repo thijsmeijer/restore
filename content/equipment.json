@@ -1,1 +1,82 @@
-[]
+[
+  {
+    "id": "10000000-0000-4000-8000-000000000001",
+    "slug": "mat",
+    "name_key": "equipment.mat.name",
+    "category": "surface",
+    "active": true,
+    "content_version": "0.1.0"
+  },
+  {
+    "id": "10000000-0000-4000-8000-000000000002",
+    "slug": "resistance_band",
+    "name_key": "equipment.resistance_band.name",
+    "category": "resistance",
+    "active": true,
+    "content_version": "0.1.0"
+  },
+  {
+    "id": "10000000-0000-4000-8000-000000000003",
+    "slug": "parallettes",
+    "name_key": "equipment.parallettes.name",
+    "category": "support",
+    "active": true,
+    "content_version": "0.1.0"
+  },
+  {
+    "id": "10000000-0000-4000-8000-000000000004",
+    "slug": "pull_up_bar",
+    "name_key": "equipment.pull_up_bar.name",
+    "category": "bar",
+    "active": true,
+    "content_version": "0.1.0"
+  },
+  {
+    "id": "10000000-0000-4000-8000-000000000005",
+    "slug": "dip_bars",
+    "name_key": "equipment.dip_bars.name",
+    "category": "bar",
+    "active": true,
+    "content_version": "0.1.0"
+  },
+  {
+    "id": "10000000-0000-4000-8000-000000000006",
+    "slug": "wall",
+    "name_key": "equipment.wall.name",
+    "category": "support",
+    "active": true,
+    "content_version": "0.1.0"
+  },
+  {
+    "id": "10000000-0000-4000-8000-000000000007",
+    "slug": "bench",
+    "name_key": "equipment.bench.name",
+    "category": "support",
+    "active": true,
+    "content_version": "0.1.0"
+  },
+  {
+    "id": "10000000-0000-4000-8000-000000000008",
+    "slug": "foam_roller",
+    "name_key": "equipment.foam_roller.name",
+    "category": "recovery_tool",
+    "active": true,
+    "content_version": "0.1.0"
+  },
+  {
+    "id": "10000000-0000-4000-8000-000000000009",
+    "slug": "massage_ball",
+    "name_key": "equipment.massage_ball.name",
+    "category": "recovery_tool",
+    "active": true,
+    "content_version": "0.1.0"
+  },
+  {
+    "id": "10000000-0000-4000-8000-000000000010",
+    "slug": "cable_stack",
+    "name_key": "equipment.cable_stack.name",
+    "category": "machine",
+    "active": true,
+    "content_version": "0.1.0"
+  }
+]

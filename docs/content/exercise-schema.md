@@ -170,6 +170,34 @@ Routine-template records are rejected until their dedicated schema is
 implemented. This prevents an unvalidated template from entering a pack while
 keeping CONTENT-001 limited to exercise, body-region, and equipment contracts.
 
+## CONTENT-002 draft catalog decisions
+
+Content version `0.1.0` seeds all 29 canonical body-region nodes from the body
+taxonomy. The `shoulder` and `hip` grouping nodes are active reference records
+but remain non-selectable and have no geometry key; each selectable child owns
+its own geometry lookup.
+
+The initial equipment slugs are `mat`, `resistance_band`, `parallettes`,
+`pull_up_bar`, `dip_bars`, `wall`, `bench`, `foam_roller`, `massage_ball`, and
+`cable_stack`. A wall is modeled as a required support when an exercise depends
+on it, rather than being assumed available in every environment.
+
+The P0 mode catalog contains `daily_restore`, `morning_primer`,
+`pre_workout_prep`, `post_workout_reset`, `desk_rescue`, `night_downshift`,
+`targeted_area`, `pain_aware_gentle`, `deep_restoration`, `gym`, `skill_prep`,
+`recovery_day`, and `emergency_reset`. The broader-roadmap `travel` and
+`assessment` session modes are not included because they are post-P0; `travel`
+remains an environment supported by compatible P0 exercises.
+
+The first ten exercises are five exact, pinned alternative pairs covering
+breathing, thoracic rotation, scapular control, wrist range exploration, and hip
+rotation. They are seed examples, not active guidance: the pack and every
+exercise remain `draft`, reviewer fields are null, contraindication lists await
+reviewed SAFE-001 metadata, no media is claimed, and no draft is allowed in the
+`pain_aware_gentle` mode. Localization references are registered for validation,
+but reviewed user-facing copy and clinical approval are required before any
+exercise status can advance.
+
 ## Minimal illustrative record
 
 ```json

@@ -1,8 +1,851 @@
 {
   "schema_version": 1,
-  "content_version": "0.0.0",
-  "created_at": "2026-08-28T00:00:00Z",
+  "content_version": "0.1.0",
+  "created_at": "2026-08-30T00:00:00Z",
   "review_status": "draft",
-  "exercises": [],
+  "exercises": [
+    {
+      "id": "20000000-0000-4000-8000-000000000001",
+      "slug": "supported_breathing_reset",
+      "version": 1,
+      "status": "draft",
+      "name_key": "exercise.supported_breathing_reset.name",
+      "summary_key": "exercise.supported_breathing_reset.summary",
+      "instructions": {
+        "setup_key": "exercise.supported_breathing_reset.setup",
+        "execution_key": "exercise.supported_breathing_reset.execution",
+        "breathing_key": "exercise.supported_breathing_reset.breathing",
+        "common_error_keys": [
+          "exercise.supported_breathing_reset.error.straining"
+        ],
+        "stop_rule_keys": [
+          "exercise.common.stop.feels_wrong",
+          "exercise.supported_breathing_reset.stop.breathing_difficulty"
+        ]
+      },
+      "prescription": {
+        "type": "breathing_cycles",
+        "default": 5,
+        "minimum": 3,
+        "maximum": 8,
+        "sets": 1,
+        "rest_seconds": 0,
+        "tempo": "easy_exhale",
+        "side_mode": "central"
+      },
+      "intensity": "very_gentle",
+      "phases": ["arrival", "cooldown"],
+      "movement_patterns": ["segmental_spinal_movement"],
+      "effects": [
+        {
+          "region_slug": "thoracic_spine",
+          "side": "central",
+          "effect": "breathe_expand",
+          "magnitude": 2,
+          "movement_pattern": "segmental_spinal_movement",
+          "primary": true
+        },
+        {
+          "region_slug": "chest_pecs",
+          "side": "bilateral",
+          "effect": "breathe_expand",
+          "magnitude": 1,
+          "movement_pattern": null,
+          "primary": false
+        }
+      ],
+      "requirements": {
+        "equipment": { "all_of": [], "any_of": [] },
+        "environments": ["home", "gym", "travel", "custom"],
+        "position": "supine",
+        "space": "small",
+        "setup_cost": "low"
+      },
+      "contraindications": [],
+      "relations": [
+        {
+          "type": "alternative",
+          "target_exercise_id": "20000000-0000-4000-8000-000000000002",
+          "version_policy": "pinned",
+          "target_version": 1,
+          "supported_modes": ["daily_restore"],
+          "preserves_effects": ["breathe_expand"]
+        }
+      ],
+      "media": { "text_fallback_required": true },
+      "allowed_modes": [
+        "daily_restore",
+        "morning_primer",
+        "post_workout_reset",
+        "night_downshift",
+        "targeted_area",
+        "deep_restoration",
+        "recovery_day",
+        "emergency_reset"
+      ],
+      "dosage_limits": {
+        "max_sets_per_routine": 2,
+        "max_weekly_exposure": null,
+        "progression_step": 1,
+        "extendable": false
+      },
+      "review": { "engineering": null, "clinical": null },
+      "created_at": "2026-08-30T00:00:00Z",
+      "retired_at": null
+    },
+    {
+      "id": "20000000-0000-4000-8000-000000000002",
+      "slug": "seated_breathing_reset",
+      "version": 1,
+      "status": "draft",
+      "name_key": "exercise.seated_breathing_reset.name",
+      "summary_key": "exercise.seated_breathing_reset.summary",
+      "instructions": {
+        "setup_key": "exercise.seated_breathing_reset.setup",
+        "execution_key": "exercise.seated_breathing_reset.execution",
+        "breathing_key": "exercise.seated_breathing_reset.breathing",
+        "common_error_keys": [
+          "exercise.seated_breathing_reset.error.straining"
+        ],
+        "stop_rule_keys": [
+          "exercise.common.stop.feels_wrong",
+          "exercise.seated_breathing_reset.stop.breathing_difficulty"
+        ]
+      },
+      "prescription": {
+        "type": "breathing_cycles",
+        "default": 5,
+        "minimum": 3,
+        "maximum": 8,
+        "sets": 1,
+        "rest_seconds": 0,
+        "tempo": "easy_exhale",
+        "side_mode": "central"
+      },
+      "intensity": "very_gentle",
+      "phases": ["arrival", "cooldown"],
+      "movement_patterns": ["segmental_spinal_movement"],
+      "effects": [
+        {
+          "region_slug": "thoracic_spine",
+          "side": "central",
+          "effect": "breathe_expand",
+          "magnitude": 2,
+          "movement_pattern": "segmental_spinal_movement",
+          "primary": true
+        },
+        {
+          "region_slug": "chest_pecs",
+          "side": "bilateral",
+          "effect": "breathe_expand",
+          "magnitude": 1,
+          "movement_pattern": null,
+          "primary": false
+        }
+      ],
+      "requirements": {
+        "equipment": { "all_of": [], "any_of": [] },
+        "environments": ["home", "desk", "gym", "travel", "custom"],
+        "position": "seated",
+        "space": "minimal",
+        "setup_cost": "low"
+      },
+      "contraindications": [],
+      "relations": [
+        {
+          "type": "alternative",
+          "target_exercise_id": "20000000-0000-4000-8000-000000000001",
+          "version_policy": "pinned",
+          "target_version": 1,
+          "supported_modes": ["daily_restore"],
+          "preserves_effects": ["breathe_expand"]
+        }
+      ],
+      "media": { "text_fallback_required": true },
+      "allowed_modes": [
+        "daily_restore",
+        "morning_primer",
+        "post_workout_reset",
+        "desk_rescue",
+        "night_downshift",
+        "targeted_area",
+        "deep_restoration",
+        "recovery_day",
+        "emergency_reset"
+      ],
+      "dosage_limits": {
+        "max_sets_per_routine": 2,
+        "max_weekly_exposure": null,
+        "progression_step": 1,
+        "extendable": false
+      },
+      "review": { "engineering": null, "clinical": null },
+      "created_at": "2026-08-30T00:00:00Z",
+      "retired_at": null
+    },
+    {
+      "id": "20000000-0000-4000-8000-000000000003",
+      "slug": "seated_thoracic_rotation",
+      "version": 1,
+      "status": "draft",
+      "name_key": "exercise.seated_thoracic_rotation.name",
+      "summary_key": "exercise.seated_thoracic_rotation.summary",
+      "instructions": {
+        "setup_key": "exercise.seated_thoracic_rotation.setup",
+        "execution_key": "exercise.seated_thoracic_rotation.execution",
+        "breathing_key": "exercise.seated_thoracic_rotation.breathing",
+        "common_error_keys": [
+          "exercise.seated_thoracic_rotation.error.forcing_range"
+        ],
+        "stop_rule_keys": [
+          "exercise.common.stop.feels_wrong",
+          "exercise.seated_thoracic_rotation.stop.symptoms_increase"
+        ]
+      },
+      "prescription": {
+        "type": "repetitions",
+        "default": 6,
+        "minimum": 3,
+        "maximum": 8,
+        "sets": 1,
+        "rest_seconds": 0,
+        "tempo": "controlled",
+        "side_mode": "bilateral_sequential"
+      },
+      "intensity": "gentle",
+      "phases": ["warm_motion", "targeted_mobility"],
+      "movement_patterns": ["rotation"],
+      "effects": [
+        {
+          "region_slug": "thoracic_spine",
+          "side": "central",
+          "effect": "mobilize",
+          "magnitude": 2,
+          "movement_pattern": "rotation",
+          "primary": true
+        }
+      ],
+      "requirements": {
+        "equipment": { "all_of": [], "any_of": [] },
+        "environments": ["home", "desk", "gym", "travel", "custom"],
+        "position": "seated",
+        "space": "small",
+        "setup_cost": "low"
+      },
+      "contraindications": [],
+      "relations": [
+        {
+          "type": "alternative",
+          "target_exercise_id": "20000000-0000-4000-8000-000000000004",
+          "version_policy": "pinned",
+          "target_version": 1,
+          "supported_modes": ["daily_restore"],
+          "preserves_effects": ["mobilize"]
+        }
+      ],
+      "media": { "text_fallback_required": true },
+      "allowed_modes": [
+        "daily_restore",
+        "morning_primer",
+        "pre_workout_prep",
+        "post_workout_reset",
+        "desk_rescue",
+        "targeted_area",
+        "deep_restoration",
+        "gym",
+        "skill_prep",
+        "recovery_day",
+        "emergency_reset"
+      ],
+      "dosage_limits": {
+        "max_sets_per_routine": 2,
+        "max_weekly_exposure": null,
+        "progression_step": 1,
+        "extendable": false
+      },
+      "review": { "engineering": null, "clinical": null },
+      "created_at": "2026-08-30T00:00:00Z",
+      "retired_at": null
+    },
+    {
+      "id": "20000000-0000-4000-8000-000000000004",
+      "slug": "side_lying_thoracic_rotation",
+      "version": 1,
+      "status": "draft",
+      "name_key": "exercise.side_lying_thoracic_rotation.name",
+      "summary_key": "exercise.side_lying_thoracic_rotation.summary",
+      "instructions": {
+        "setup_key": "exercise.side_lying_thoracic_rotation.setup",
+        "execution_key": "exercise.side_lying_thoracic_rotation.execution",
+        "breathing_key": "exercise.side_lying_thoracic_rotation.breathing",
+        "common_error_keys": [
+          "exercise.side_lying_thoracic_rotation.error.forcing_range"
+        ],
+        "stop_rule_keys": [
+          "exercise.common.stop.feels_wrong",
+          "exercise.side_lying_thoracic_rotation.stop.symptoms_increase"
+        ]
+      },
+      "prescription": {
+        "type": "repetitions",
+        "default": 6,
+        "minimum": 3,
+        "maximum": 8,
+        "sets": 1,
+        "rest_seconds": 0,
+        "tempo": "controlled",
+        "side_mode": "bilateral_sequential"
+      },
+      "intensity": "gentle",
+      "phases": ["targeted_mobility"],
+      "movement_patterns": ["rotation"],
+      "effects": [
+        {
+          "region_slug": "thoracic_spine",
+          "side": "central",
+          "effect": "mobilize",
+          "magnitude": 2,
+          "movement_pattern": "rotation",
+          "primary": true
+        }
+      ],
+      "requirements": {
+        "equipment": { "all_of": [], "any_of": [] },
+        "environments": ["home", "gym", "travel", "custom"],
+        "position": "side_lying",
+        "space": "medium",
+        "setup_cost": "low"
+      },
+      "contraindications": [],
+      "relations": [
+        {
+          "type": "alternative",
+          "target_exercise_id": "20000000-0000-4000-8000-000000000003",
+          "version_policy": "pinned",
+          "target_version": 1,
+          "supported_modes": ["daily_restore"],
+          "preserves_effects": ["mobilize"]
+        }
+      ],
+      "media": { "text_fallback_required": true },
+      "allowed_modes": [
+        "daily_restore",
+        "morning_primer",
+        "pre_workout_prep",
+        "post_workout_reset",
+        "targeted_area",
+        "deep_restoration",
+        "gym",
+        "skill_prep",
+        "recovery_day"
+      ],
+      "dosage_limits": {
+        "max_sets_per_routine": 2,
+        "max_weekly_exposure": null,
+        "progression_step": 1,
+        "extendable": false
+      },
+      "review": { "engineering": null, "clinical": null },
+      "created_at": "2026-08-30T00:00:00Z",
+      "retired_at": null
+    },
+    {
+      "id": "20000000-0000-4000-8000-000000000005",
+      "slug": "quadruped_scapular_glide",
+      "version": 1,
+      "status": "draft",
+      "name_key": "exercise.quadruped_scapular_glide.name",
+      "summary_key": "exercise.quadruped_scapular_glide.summary",
+      "instructions": {
+        "setup_key": "exercise.quadruped_scapular_glide.setup",
+        "execution_key": "exercise.quadruped_scapular_glide.execution",
+        "breathing_key": "exercise.quadruped_scapular_glide.breathing",
+        "common_error_keys": [
+          "exercise.quadruped_scapular_glide.error.elbow_bend"
+        ],
+        "stop_rule_keys": [
+          "exercise.common.stop.feels_wrong",
+          "exercise.quadruped_scapular_glide.stop.wrist_or_shoulder_discomfort"
+        ]
+      },
+      "prescription": {
+        "type": "repetitions",
+        "default": 8,
+        "minimum": 5,
+        "maximum": 12,
+        "sets": 1,
+        "rest_seconds": 15,
+        "tempo": "controlled",
+        "side_mode": "bilateral_simultaneous"
+      },
+      "intensity": "gentle",
+      "phases": ["controlled_range", "integration"],
+      "movement_patterns": ["protraction_retraction"],
+      "effects": [
+        {
+          "region_slug": "scapular_region",
+          "side": "bilateral",
+          "effect": "stabilize_control",
+          "magnitude": 2,
+          "movement_pattern": "protraction_retraction",
+          "primary": true
+        }
+      ],
+      "requirements": {
+        "equipment": { "all_of": [], "any_of": [] },
+        "environments": ["home", "gym", "travel", "custom"],
+        "position": "quadruped",
+        "space": "small",
+        "setup_cost": "low"
+      },
+      "contraindications": [],
+      "relations": [
+        {
+          "type": "alternative",
+          "target_exercise_id": "20000000-0000-4000-8000-000000000006",
+          "version_policy": "pinned",
+          "target_version": 1,
+          "supported_modes": ["daily_restore"],
+          "preserves_effects": ["stabilize_control"]
+        }
+      ],
+      "media": { "text_fallback_required": true },
+      "allowed_modes": [
+        "daily_restore",
+        "morning_primer",
+        "pre_workout_prep",
+        "post_workout_reset",
+        "targeted_area",
+        "deep_restoration",
+        "gym",
+        "skill_prep",
+        "recovery_day"
+      ],
+      "dosage_limits": {
+        "max_sets_per_routine": 2,
+        "max_weekly_exposure": null,
+        "progression_step": 1,
+        "extendable": false
+      },
+      "review": { "engineering": null, "clinical": null },
+      "created_at": "2026-08-30T00:00:00Z",
+      "retired_at": null
+    },
+    {
+      "id": "20000000-0000-4000-8000-000000000006",
+      "slug": "wall_scapular_glide",
+      "version": 1,
+      "status": "draft",
+      "name_key": "exercise.wall_scapular_glide.name",
+      "summary_key": "exercise.wall_scapular_glide.summary",
+      "instructions": {
+        "setup_key": "exercise.wall_scapular_glide.setup",
+        "execution_key": "exercise.wall_scapular_glide.execution",
+        "breathing_key": "exercise.wall_scapular_glide.breathing",
+        "common_error_keys": [
+          "exercise.wall_scapular_glide.error.shoulder_shrug"
+        ],
+        "stop_rule_keys": [
+          "exercise.common.stop.feels_wrong",
+          "exercise.wall_scapular_glide.stop.shoulder_discomfort"
+        ]
+      },
+      "prescription": {
+        "type": "repetitions",
+        "default": 8,
+        "minimum": 5,
+        "maximum": 12,
+        "sets": 1,
+        "rest_seconds": 15,
+        "tempo": "controlled",
+        "side_mode": "bilateral_simultaneous"
+      },
+      "intensity": "gentle",
+      "phases": ["controlled_range", "integration"],
+      "movement_patterns": ["protraction_retraction"],
+      "effects": [
+        {
+          "region_slug": "scapular_region",
+          "side": "bilateral",
+          "effect": "stabilize_control",
+          "magnitude": 2,
+          "movement_pattern": "protraction_retraction",
+          "primary": true
+        }
+      ],
+      "requirements": {
+        "equipment": { "all_of": ["wall"], "any_of": [] },
+        "environments": ["home", "desk", "gym", "travel", "custom"],
+        "position": "standing",
+        "space": "small",
+        "setup_cost": "low"
+      },
+      "contraindications": [],
+      "relations": [
+        {
+          "type": "alternative",
+          "target_exercise_id": "20000000-0000-4000-8000-000000000005",
+          "version_policy": "pinned",
+          "target_version": 1,
+          "supported_modes": ["daily_restore"],
+          "preserves_effects": ["stabilize_control"]
+        }
+      ],
+      "media": { "text_fallback_required": true },
+      "allowed_modes": [
+        "daily_restore",
+        "morning_primer",
+        "pre_workout_prep",
+        "post_workout_reset",
+        "desk_rescue",
+        "targeted_area",
+        "deep_restoration",
+        "gym",
+        "skill_prep",
+        "recovery_day"
+      ],
+      "dosage_limits": {
+        "max_sets_per_routine": 2,
+        "max_weekly_exposure": null,
+        "progression_step": 1,
+        "extendable": false
+      },
+      "review": { "engineering": null, "clinical": null },
+      "created_at": "2026-08-30T00:00:00Z",
+      "retired_at": null
+    },
+    {
+      "id": "20000000-0000-4000-8000-000000000007",
+      "slug": "wrist_controlled_circles",
+      "version": 1,
+      "status": "draft",
+      "name_key": "exercise.wrist_controlled_circles.name",
+      "summary_key": "exercise.wrist_controlled_circles.summary",
+      "instructions": {
+        "setup_key": "exercise.wrist_controlled_circles.setup",
+        "execution_key": "exercise.wrist_controlled_circles.execution",
+        "breathing_key": "exercise.wrist_controlled_circles.breathing",
+        "common_error_keys": [
+          "exercise.wrist_controlled_circles.error.forcing_range"
+        ],
+        "stop_rule_keys": [
+          "exercise.common.stop.feels_wrong",
+          "exercise.wrist_controlled_circles.stop.symptoms_increase"
+        ]
+      },
+      "prescription": {
+        "type": "repetitions",
+        "default": 5,
+        "minimum": 3,
+        "maximum": 8,
+        "sets": 1,
+        "rest_seconds": 0,
+        "tempo": "slow_controlled",
+        "side_mode": "bilateral_simultaneous"
+      },
+      "intensity": "gentle",
+      "phases": ["warm_motion", "controlled_range"],
+      "movement_patterns": ["wrist_flexion_extension_deviation"],
+      "effects": [
+        {
+          "region_slug": "wrist",
+          "side": "bilateral",
+          "effect": "explore_range",
+          "magnitude": 2,
+          "movement_pattern": "wrist_flexion_extension_deviation",
+          "primary": true
+        }
+      ],
+      "requirements": {
+        "equipment": { "all_of": [], "any_of": [] },
+        "environments": ["home", "desk", "gym", "travel", "custom"],
+        "position": "seated",
+        "space": "minimal",
+        "setup_cost": "low"
+      },
+      "contraindications": [],
+      "relations": [
+        {
+          "type": "alternative",
+          "target_exercise_id": "20000000-0000-4000-8000-000000000008",
+          "version_policy": "pinned",
+          "target_version": 1,
+          "supported_modes": ["daily_restore"],
+          "preserves_effects": ["explore_range"]
+        }
+      ],
+      "media": { "text_fallback_required": true },
+      "allowed_modes": [
+        "daily_restore",
+        "morning_primer",
+        "pre_workout_prep",
+        "post_workout_reset",
+        "desk_rescue",
+        "targeted_area",
+        "deep_restoration",
+        "gym",
+        "skill_prep",
+        "recovery_day",
+        "emergency_reset"
+      ],
+      "dosage_limits": {
+        "max_sets_per_routine": 2,
+        "max_weekly_exposure": null,
+        "progression_step": 1,
+        "extendable": false
+      },
+      "review": { "engineering": null, "clinical": null },
+      "created_at": "2026-08-30T00:00:00Z",
+      "retired_at": null
+    },
+    {
+      "id": "20000000-0000-4000-8000-000000000008",
+      "slug": "quadruped_wrist_rock",
+      "version": 1,
+      "status": "draft",
+      "name_key": "exercise.quadruped_wrist_rock.name",
+      "summary_key": "exercise.quadruped_wrist_rock.summary",
+      "instructions": {
+        "setup_key": "exercise.quadruped_wrist_rock.setup",
+        "execution_key": "exercise.quadruped_wrist_rock.execution",
+        "breathing_key": "exercise.quadruped_wrist_rock.breathing",
+        "common_error_keys": [
+          "exercise.quadruped_wrist_rock.error.forcing_range"
+        ],
+        "stop_rule_keys": [
+          "exercise.common.stop.feels_wrong",
+          "exercise.quadruped_wrist_rock.stop.symptoms_increase"
+        ]
+      },
+      "prescription": {
+        "type": "repetitions",
+        "default": 6,
+        "minimum": 3,
+        "maximum": 10,
+        "sets": 1,
+        "rest_seconds": 15,
+        "tempo": "controlled",
+        "side_mode": "bilateral_simultaneous"
+      },
+      "intensity": "gentle",
+      "phases": ["targeted_mobility", "controlled_range"],
+      "movement_patterns": ["wrist_flexion_extension_deviation"],
+      "effects": [
+        {
+          "region_slug": "wrist",
+          "side": "bilateral",
+          "effect": "explore_range",
+          "magnitude": 2,
+          "movement_pattern": "wrist_flexion_extension_deviation",
+          "primary": true
+        }
+      ],
+      "requirements": {
+        "equipment": { "all_of": [], "any_of": [] },
+        "environments": ["home", "gym", "travel", "custom"],
+        "position": "quadruped",
+        "space": "small",
+        "setup_cost": "low"
+      },
+      "contraindications": [],
+      "relations": [
+        {
+          "type": "alternative",
+          "target_exercise_id": "20000000-0000-4000-8000-000000000007",
+          "version_policy": "pinned",
+          "target_version": 1,
+          "supported_modes": ["daily_restore"],
+          "preserves_effects": ["explore_range"]
+        }
+      ],
+      "media": { "text_fallback_required": true },
+      "allowed_modes": [
+        "daily_restore",
+        "morning_primer",
+        "pre_workout_prep",
+        "post_workout_reset",
+        "targeted_area",
+        "deep_restoration",
+        "gym",
+        "skill_prep",
+        "recovery_day"
+      ],
+      "dosage_limits": {
+        "max_sets_per_routine": 2,
+        "max_weekly_exposure": null,
+        "progression_step": 1,
+        "extendable": false
+      },
+      "review": { "engineering": null, "clinical": null },
+      "created_at": "2026-08-30T00:00:00Z",
+      "retired_at": null
+    },
+    {
+      "id": "20000000-0000-4000-8000-000000000009",
+      "slug": "seated_hip_rotation_switch",
+      "version": 1,
+      "status": "draft",
+      "name_key": "exercise.seated_hip_rotation_switch.name",
+      "summary_key": "exercise.seated_hip_rotation_switch.summary",
+      "instructions": {
+        "setup_key": "exercise.seated_hip_rotation_switch.setup",
+        "execution_key": "exercise.seated_hip_rotation_switch.execution",
+        "breathing_key": "exercise.seated_hip_rotation_switch.breathing",
+        "common_error_keys": [
+          "exercise.seated_hip_rotation_switch.error.forcing_range"
+        ],
+        "stop_rule_keys": [
+          "exercise.common.stop.feels_wrong",
+          "exercise.seated_hip_rotation_switch.stop.symptoms_increase"
+        ]
+      },
+      "prescription": {
+        "type": "repetitions",
+        "default": 6,
+        "minimum": 3,
+        "maximum": 10,
+        "sets": 1,
+        "rest_seconds": 15,
+        "tempo": "controlled",
+        "side_mode": "bilateral_sequential"
+      },
+      "intensity": "gentle",
+      "phases": ["warm_motion", "targeted_mobility"],
+      "movement_patterns": ["internal_external_rotation"],
+      "effects": [
+        {
+          "region_slug": "hip_deep_rotation",
+          "side": "bilateral",
+          "effect": "explore_range",
+          "magnitude": 2,
+          "movement_pattern": "internal_external_rotation",
+          "primary": true
+        }
+      ],
+      "requirements": {
+        "equipment": { "all_of": [], "any_of": [] },
+        "environments": ["home", "desk", "gym", "travel", "custom"],
+        "position": "seated",
+        "space": "small",
+        "setup_cost": "low"
+      },
+      "contraindications": [],
+      "relations": [
+        {
+          "type": "alternative",
+          "target_exercise_id": "20000000-0000-4000-8000-000000000010",
+          "version_policy": "pinned",
+          "target_version": 1,
+          "supported_modes": ["daily_restore"],
+          "preserves_effects": ["explore_range"]
+        }
+      ],
+      "media": { "text_fallback_required": true },
+      "allowed_modes": [
+        "daily_restore",
+        "morning_primer",
+        "pre_workout_prep",
+        "post_workout_reset",
+        "desk_rescue",
+        "targeted_area",
+        "deep_restoration",
+        "gym",
+        "skill_prep",
+        "recovery_day",
+        "emergency_reset"
+      ],
+      "dosage_limits": {
+        "max_sets_per_routine": 2,
+        "max_weekly_exposure": null,
+        "progression_step": 1,
+        "extendable": false
+      },
+      "review": { "engineering": null, "clinical": null },
+      "created_at": "2026-08-30T00:00:00Z",
+      "retired_at": null
+    },
+    {
+      "id": "20000000-0000-4000-8000-000000000010",
+      "slug": "supine_hip_rotation",
+      "version": 1,
+      "status": "draft",
+      "name_key": "exercise.supine_hip_rotation.name",
+      "summary_key": "exercise.supine_hip_rotation.summary",
+      "instructions": {
+        "setup_key": "exercise.supine_hip_rotation.setup",
+        "execution_key": "exercise.supine_hip_rotation.execution",
+        "breathing_key": "exercise.supine_hip_rotation.breathing",
+        "common_error_keys": [
+          "exercise.supine_hip_rotation.error.forcing_range"
+        ],
+        "stop_rule_keys": [
+          "exercise.common.stop.feels_wrong",
+          "exercise.supine_hip_rotation.stop.symptoms_increase"
+        ]
+      },
+      "prescription": {
+        "type": "repetitions",
+        "default": 6,
+        "minimum": 3,
+        "maximum": 10,
+        "sets": 1,
+        "rest_seconds": 15,
+        "tempo": "controlled",
+        "side_mode": "bilateral_sequential"
+      },
+      "intensity": "very_gentle",
+      "phases": ["warm_motion", "targeted_mobility"],
+      "movement_patterns": ["internal_external_rotation"],
+      "effects": [
+        {
+          "region_slug": "hip_deep_rotation",
+          "side": "bilateral",
+          "effect": "explore_range",
+          "magnitude": 2,
+          "movement_pattern": "internal_external_rotation",
+          "primary": true
+        }
+      ],
+      "requirements": {
+        "equipment": { "all_of": [], "any_of": [] },
+        "environments": ["home", "gym", "travel", "custom"],
+        "position": "supine",
+        "space": "small",
+        "setup_cost": "low"
+      },
+      "contraindications": [],
+      "relations": [
+        {
+          "type": "alternative",
+          "target_exercise_id": "20000000-0000-4000-8000-000000000009",
+          "version_policy": "pinned",
+          "target_version": 1,
+          "supported_modes": ["daily_restore"],
+          "preserves_effects": ["explore_range"]
+        }
+      ],
+      "media": { "text_fallback_required": true },
+      "allowed_modes": [
+        "daily_restore",
+        "morning_primer",
+        "pre_workout_prep",
+        "post_workout_reset",
+        "targeted_area",
+        "deep_restoration",
+        "gym",
+        "skill_prep",
+        "recovery_day"
+      ],
+      "dosage_limits": {
+        "max_sets_per_routine": 2,
+        "max_weekly_exposure": null,
+        "progression_step": 1,
+        "extendable": false
+      },
+      "review": { "engineering": null, "clinical": null },
+      "created_at": "2026-08-30T00:00:00Z",
+      "retired_at": null
+    }
+  ],
   "routine_templates": []
 }
