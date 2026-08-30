@@ -1,0 +1,54 @@
+{
+  "engine_version": "0.2.0",
+  "estimated_duration_seconds": 295,
+  "items": [
+    {
+      "phase": "arrival",
+      "exercise_id": "20000000-0000-4000-8000-000000000001",
+      "exercise_version": 1,
+      "dose": 5,
+      "sets": 1,
+      "estimated_duration_seconds": 55,
+      "selection_reason_codes": ["phase_requirement"]
+    },
+    {
+      "phase": "targeted_mobility",
+      "exercise_id": "50000000-0000-4000-8000-000000000001",
+      "exercise_version": 1,
+      "dose": 120,
+      "sets": 1,
+      "estimated_duration_seconds": 125,
+      "selection_reason_codes": [
+        "target_match",
+        "intent_match",
+        "profile_goal_match",
+        "phase_requirement"
+      ]
+    },
+    {
+      "phase": "targeted_mobility",
+      "exercise_id": "50000000-0000-4000-8000-000000000003",
+      "exercise_version": 1,
+      "dose": 65,
+      "sets": 1,
+      "estimated_duration_seconds": 70,
+      "selection_reason_codes": [
+        "target_match",
+        "intent_match",
+        "profile_goal_match",
+        "phase_requirement"
+      ]
+    },
+    {
+      "phase": "cooldown",
+      "exercise_id": "20000000-0000-4000-8000-000000000002",
+      "exercise_version": 1,
+      "dose": 4,
+      "sets": 1,
+      "estimated_duration_seconds": 45,
+      "selection_reason_codes": ["phase_requirement"]
+    }
+  ],
+  "duration_status": "within_tolerance",
+  "validation_issue_codes": []
+}

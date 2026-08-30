@@ -195,6 +195,42 @@ still contains no templates and only draft exercises, so it intentionally
 cannot produce a daily-use routine until the exact template, safety rules, and
 exercise versions receive the required review.
 
+## GEN-002 engine version 0.2.0 decisions
+
+Generation-input schema version 2 adds a caller-supplied routine identity and
+distinguishes preference-qualified skips and replacements from time, equipment,
+or safety-driven events. The engine never interprets an unqualified skip as a
+negative preference. Engine, content, generation rules, configuration, and
+safety-rules versions must still match exactly.
+
+Target priority follows the stored target order through bounded basis-point
+weights in the versioned rules. Candidate scoring runs only after hard filtering
+and exposes integer terms for target and primary-effect matches, intent,
+ordered profile goals through versioned goal-to-effect mappings, compatible
+planned/completed training context, favorite, bounded immediate response
+history, and recent exposure. Individual response terms and their combined
+contribution are capped by configuration. A supplied seed breaks only otherwise
+stable ties; it cannot alter eligibility or any safety decision.
+
+The builder satisfies required template budgets first, attempts high-priority
+target coverage, fills remaining template targets, and adjusts exact dose within
+reviewed exercise and caution limits. It forbids duplicate exercises, limits
+repeated movement patterns, preserves template order, and emits only eligible,
+non-selected reviewed alternatives. The final validator independently checks
+eligibility, cautions, prescription bounds, duration arithmetic, ordering,
+template budgets, movement-pattern limits, alternatives, and target coverage.
+Every unaddressed high-priority target carries a stable omission reason.
+
+Successful routines stay within configured duration tolerance or record the
+permitted one-indivisible-exercise difference. Otherwise generation returns an
+explicit `duration_unfillable`, `phase_unfillable`, or `routine_invalid`
+failure; it never returns an unexplained empty routine. Scoring, prescriptions,
+reason codes, input snapshot, versions, seed, validation report, and exact
+exercise identities are part of the reproducible output. SQLite persistence,
+developer trace UI, routine preview, editing, and session playback remain later
+tickets. The bundled pack is still draft-only and intentionally produces no
+routine.
+
 ## CONTENT-002 draft catalog decisions
 
 Content version `0.1.0` seeds all 29 canonical body-region nodes from the body

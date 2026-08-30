@@ -18,22 +18,33 @@ function prescriptionUnitSeconds(
   }
 }
 
-export function estimateMinimumExerciseSeconds(
+export function estimateExerciseSeconds(
   exercise: Exercise,
   rules: GenerationRules,
+  dose: number,
+  sets: number,
 ): number {
   const sideMultiplier =
     exercise.prescription.side_mode === 'bilateral_sequential' ? 2 : 1;
   const movementSeconds =
     exercise.prescription.type === 'reassessment'
       ? rules.seconds_per_reassessment
-      : exercise.prescription.minimum *
-        prescriptionUnitSeconds(exercise, rules) *
-        sideMultiplier;
-  const setSeconds = movementSeconds * exercise.prescription.sets;
+      : dose * prescriptionUnitSeconds(exercise, rules) * sideMultiplier;
+  const setSeconds = movementSeconds * sets;
   const restSeconds =
-    exercise.prescription.rest_seconds *
-    Math.max(0, exercise.prescription.sets - 1);
+    exercise.prescription.rest_seconds * Math.max(0, sets - 1);
 
   return Math.ceil(setSeconds + restSeconds + rules.transition_seconds);
+}
+
+export function estimateMinimumExerciseSeconds(
+  exercise: Exercise,
+  rules: GenerationRules,
+): number {
+  return estimateExerciseSeconds(
+    exercise,
+    rules,
+    exercise.prescription.minimum,
+    exercise.prescription.sets,
+  );
 }

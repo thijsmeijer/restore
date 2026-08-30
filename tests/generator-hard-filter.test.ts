@@ -71,7 +71,8 @@ function reviewedTemplate(): RoutineTemplate {
 
 function generationInput(): GenerationInput {
   return {
-    schema_version: 1,
+    schema_version: 2,
+    routine_id: '40000000-0000-4000-8000-000000000002',
     check_in_id: '40000000-0000-4000-8000-000000000001',
     generated_at: generatedAt,
     mode: 'daily_restore',
@@ -117,6 +118,38 @@ function generationRules(): GenerationRules {
     seconds_per_breathing_cycle: 10,
     seconds_per_reassessment: 20,
     transition_seconds: 5,
+    duration_tolerance_basis_points: 1_000,
+    high_priority_target_count: 2,
+    target_priority_step_basis_points: 2_000,
+    minimum_target_priority_basis_points: 2_000,
+    profile_goal_priority_step_basis_points: 2_000,
+    minimum_profile_goal_priority_basis_points: 2_000,
+    goal_effect_mappings: [
+      {
+        goal_slug: 'move_more_freely',
+        effects: ['mobilize', 'explore_range'],
+      },
+    ],
+    maximum_items: 12,
+    maximum_same_movement_pattern: 2,
+    scoring: {
+      target_match: 300,
+      primary_effect_bonus: 60,
+      intent_match: 120,
+      profile_goal_match: 70,
+      training_context_match: 80,
+      favorite: 40,
+      helpful_response_each: 10,
+      helpful_response_cap: 50,
+      uncomfortable_response_each: -20,
+      uncomfortable_response_cap: 80,
+      preference_skip_each: -10,
+      preference_skip_cap: 40,
+      preference_replacement_each: -10,
+      preference_replacement_cap: 40,
+      history_combined_cap: 100,
+      recent_exposure_penalty: -30,
+    },
   };
 }
 
@@ -479,6 +512,9 @@ describe('GEN-001 hard-filter preparation', () => {
         catalog,
         rules,
       ),
+    ).toMatchObject({ ok: false, code: 'input_invalid' });
+    expect(
+      prepareGeneration({ ...input, schema_version: 1 }, catalog, rules),
     ).toMatchObject({ ok: false, code: 'input_invalid' });
     expect(
       prepareGeneration({ ...input, content_version: '0.2.0' }, catalog, rules),

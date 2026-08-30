@@ -17,8 +17,11 @@ const failureExplanationKeys: Record<GenerationFailureCode, string> = {
   catalog_not_clinically_reviewed:
     'generator.failure.catalog_not_clinically_reviewed',
   content_version_mismatch: 'generator.failure.content_version_mismatch',
+  duration_unfillable: 'generator.failure.duration_unfillable',
   input_invalid: 'generator.failure.input_invalid',
   no_eligible_content: 'generator.failure.no_eligible_content',
+  phase_unfillable: 'generator.failure.phase_unfillable',
+  routine_invalid: 'generator.failure.routine_invalid',
   template_ambiguous: 'generator.failure.template_ambiguous',
   template_unavailable: 'generator.failure.template_unavailable',
   version_mismatch: 'generator.failure.version_mismatch',
@@ -81,11 +84,19 @@ function templateHasExactClinicalReview(
 }
 
 function hasValidRules(rules: GenerationRules): boolean {
-  const isBoundedPositiveSecondValue = (value: number): boolean =>
+  const isIntegerBetween = (
+    value: number,
+    minimum: number,
+    maximum: number,
+  ): boolean =>
     Number.isFinite(value) &&
     Number.isInteger(value) &&
-    value > 0 &&
-    value <= 3_600;
+    value >= minimum &&
+    value <= maximum;
+  const isBoundedPositiveSecondValue = (value: number): boolean =>
+    isIntegerBetween(value, 1, 3_600);
+  const scoring = rules.scoring;
+  if (!scoring || !Array.isArray(rules.goal_effect_mappings)) return false;
 
   return (
     rules.rules_version.length > 0 &&
@@ -97,7 +108,49 @@ function hasValidRules(rules: GenerationRules): boolean {
     Number.isFinite(rules.transition_seconds) &&
     Number.isInteger(rules.transition_seconds) &&
     rules.transition_seconds >= 0 &&
-    rules.transition_seconds <= 3_600
+    rules.transition_seconds <= 3_600 &&
+    isIntegerBetween(rules.duration_tolerance_basis_points, 0, 5_000) &&
+    isIntegerBetween(rules.high_priority_target_count, 0, 100) &&
+    isIntegerBetween(rules.target_priority_step_basis_points, 0, 10_000) &&
+    isIntegerBetween(rules.minimum_target_priority_basis_points, 0, 10_000) &&
+    isIntegerBetween(
+      rules.profile_goal_priority_step_basis_points,
+      0,
+      10_000,
+    ) &&
+    isIntegerBetween(
+      rules.minimum_profile_goal_priority_basis_points,
+      0,
+      10_000,
+    ) &&
+    rules.goal_effect_mappings.length <= 64 &&
+    valuesAreUnique(
+      rules.goal_effect_mappings.map((mapping) => mapping.goal_slug),
+    ) &&
+    rules.goal_effect_mappings.every(
+      (mapping) =>
+        mapping.goal_slug.length > 0 &&
+        mapping.effects.length > 0 &&
+        valuesAreUnique(mapping.effects),
+    ) &&
+    isIntegerBetween(rules.maximum_items, 1, 50) &&
+    isIntegerBetween(rules.maximum_same_movement_pattern, 1, 20) &&
+    isIntegerBetween(scoring.target_match, 0, 1_000_000) &&
+    isIntegerBetween(scoring.primary_effect_bonus, 0, 1_000_000) &&
+    isIntegerBetween(scoring.intent_match, 0, 1_000_000) &&
+    isIntegerBetween(scoring.profile_goal_match, 0, 1_000_000) &&
+    isIntegerBetween(scoring.training_context_match, 0, 1_000_000) &&
+    isIntegerBetween(scoring.favorite, 0, 1_000_000) &&
+    isIntegerBetween(scoring.helpful_response_each, 0, 1_000_000) &&
+    isIntegerBetween(scoring.helpful_response_cap, 0, 1_000_000) &&
+    isIntegerBetween(scoring.uncomfortable_response_each, -1_000_000, 0) &&
+    isIntegerBetween(scoring.uncomfortable_response_cap, 0, 1_000_000) &&
+    isIntegerBetween(scoring.preference_skip_each, -1_000_000, 0) &&
+    isIntegerBetween(scoring.preference_skip_cap, 0, 1_000_000) &&
+    isIntegerBetween(scoring.preference_replacement_each, -1_000_000, 0) &&
+    isIntegerBetween(scoring.preference_replacement_cap, 0, 1_000_000) &&
+    isIntegerBetween(scoring.history_combined_cap, 0, 1_000_000) &&
+    isIntegerBetween(scoring.recent_exposure_penalty, -1_000_000, 0)
   );
 }
 
