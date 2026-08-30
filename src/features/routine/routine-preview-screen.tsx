@@ -92,6 +92,7 @@ export interface RoutinePreviewContentProps {
   readonly failureCode: RoutineOperationFailureCode | null;
   readonly onBack: () => void;
   readonly onRegenerate: () => void;
+  readonly onStart: () => void;
   readonly onReplace: (
     itemOrder: number,
     replacementExerciseId: string,
@@ -112,6 +113,7 @@ export function RoutinePreviewContent({
   failureCode,
   onBack,
   onRegenerate,
+  onStart,
   onReplace,
 }: RoutinePreviewContentProps) {
   const { colors } = useRestoreTheme();
@@ -280,13 +282,21 @@ export function RoutinePreviewContent({
       ))}
 
       {details.routine.status === 'ready' ? (
-        <Button
-          accessibilityHint="Builds another validated option and preserves this routine in history."
-          disabled={busy}
-          label={busy ? 'Updating…' : 'Build another option'}
-          onPress={onRegenerate}
-          variant="secondary"
-        />
+        <View style={styles.finalActions}>
+          <Button
+            accessibilityHint="Opens the guided session using this exact routine."
+            disabled={busy}
+            label="Start routine"
+            onPress={onStart}
+          />
+          <Button
+            accessibilityHint="Builds another validated option and preserves this routine in history."
+            disabled={busy}
+            label={busy ? 'Updating…' : 'Build another option'}
+            onPress={onRegenerate}
+            variant="secondary"
+          />
+        </View>
       ) : null}
     </Screen>
   );
@@ -353,6 +363,12 @@ export function RoutinePreviewScreen() {
               replaceRoute(result.details.routine.value.routine_id);
           });
       }}
+      onStart={() =>
+        router.push({
+          pathname: '/session/[routineId]',
+          params: { routineId: details.routine.value.routine_id },
+        })
+      }
       onReplace={(itemOrder, replacementExerciseId) => {
         void routines
           .replace(
@@ -403,5 +419,6 @@ const styles = StyleSheet.create({
   dose: { fontSize: typography.label, fontWeight: '700', lineHeight: 21 },
   warning: { fontSize: typography.label, fontWeight: '700', lineHeight: 21 },
   options: { gap: spacing.sm },
+  finalActions: { gap: spacing.sm },
   optionHeading: { fontSize: typography.label, fontWeight: '700' },
 });

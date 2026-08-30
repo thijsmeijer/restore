@@ -29,4 +29,14 @@ describe('settings profile entry point', () => {
 
     expect(mockPush).toHaveBeenCalledWith('/developer/generator');
   });
+
+  it('opens the controls-only player preview in development builds', async () => {
+    const screen = await render(<SettingsScreen />);
+
+    await fireEvent.press(
+      screen.getByRole('button', { name: 'Preview session controls' }),
+    );
+
+    expect(mockPush).toHaveBeenCalledWith('/developer/player');
+  });
 });

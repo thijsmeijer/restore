@@ -85,6 +85,7 @@ describe('routine preview', () => {
         onBack={jest.fn()}
         onRegenerate={jest.fn()}
         onReplace={jest.fn()}
+        onStart={jest.fn()}
       />,
     );
 
@@ -106,6 +107,7 @@ describe('routine preview', () => {
         onBack={jest.fn()}
         onRegenerate={jest.fn()}
         onReplace={onReplace}
+        onStart={jest.fn()}
       />,
     );
 
@@ -128,6 +130,7 @@ describe('routine preview', () => {
         onBack={jest.fn()}
         onRegenerate={onRegenerate}
         onReplace={jest.fn()}
+        onStart={jest.fn()}
       />,
     );
 
@@ -147,6 +150,7 @@ describe('routine preview', () => {
         onBack={jest.fn()}
         onRegenerate={jest.fn()}
         onReplace={jest.fn()}
+        onStart={jest.fn()}
       />,
     );
 
@@ -155,5 +159,26 @@ describe('routine preview', () => {
     expect(
       screen.queryByRole('button', { name: 'Build another option' }),
     ).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Start routine' })).toBeNull();
+  });
+
+  it('starts only the exact ready routine shown in preview', async () => {
+    const onStart = jest.fn();
+    const screen = await render(
+      <RoutinePreviewContent
+        busy={false}
+        details={routineDetails()}
+        failureCode={null}
+        onBack={jest.fn()}
+        onRegenerate={jest.fn()}
+        onReplace={jest.fn()}
+        onStart={onStart}
+      />,
+    );
+
+    await fireEvent.press(
+      screen.getByRole('button', { name: 'Start routine' }),
+    );
+    expect(onStart).toHaveBeenCalledTimes(1);
   });
 });
