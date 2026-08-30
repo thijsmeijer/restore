@@ -25,6 +25,11 @@ const latest: CheckIn = {
   ],
   training: null,
   note: null,
+  safety: null,
+  safetyResult: null,
+  safetyRulesVersion: null,
+  safetyRuleIds: [],
+  safetyReasonCodes: [],
   observedAt: '2026-08-30T08:15:00.000Z',
   localDate: '2026-08-30',
   timeZone: 'Europe/Amsterdam',
@@ -84,5 +89,29 @@ describe('Today check-in entry point', () => {
     screen.getByText('Your saved information is still on this iPhone.');
     await fireEvent.press(screen.getByRole('button', { name: 'Try again' }));
     expect(onRetry).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps a blocked result visible after returning to Today', async () => {
+    const screen = await render(
+      <TodayContent
+        latest={{
+          ...latest,
+          captureStatus: 'submitted',
+          safety: { reportedSignals: ['rapidly_worsening_problem'] },
+          safetyResult: 'blocked',
+          safetyRulesVersion: 'check_in_safety_engineering_2026_08_30',
+          safetyRuleIds: ['block_rapidly_worsening_problem_v1'],
+          safetyReasonCodes: ['reported_rapidly_worsening_problem'],
+        }}
+        onCheckIn={jest.fn()}
+        onRetry={jest.fn()}
+        status="ready"
+      />,
+    );
+
+    screen.getByRole('text', { name: 'Routine paused' });
+    screen.getByRole('alert', {
+      name: /Restore will not build a routine from this check-in/i,
+    });
   });
 });

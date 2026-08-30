@@ -21,8 +21,10 @@ import { radius, spacing, typography } from '@/design-system/tokens';
 import { useRestoreTheme } from '@/design-system/use-theme';
 import { BodyObservationSelector } from '@/features/check-in/body-observation-selector';
 import type {
+  CheckIn,
   CheckInInput,
-  SaveCheckInResult,
+  SubmitCheckInInput,
+  SubmitCheckInResult,
 } from '@/features/check-in/check-in';
 import { normalizeOptionalNote } from '@/features/check-in/check-in';
 import {
@@ -39,8 +41,11 @@ import {
   trainingTypeOptions,
   type TrainingType,
 } from '@/features/onboarding/profile-options';
+import { CheckInSafetyResultScreen } from '@/features/safety/check-in-safety-result-screen';
+import { CheckInSafetyStep } from '@/features/safety/check-in-safety-step';
+import type { CheckInSafetyInput } from '@/features/safety/check-in-safety';
 
-const stepCount = 4;
+const stepCount = 5;
 const durationPresets = [5, 10, 15, 20, 30, 45] as const;
 
 const readinessOptions = [
@@ -78,11 +83,18 @@ const stepCopy = [
     title: 'Any training today?',
     description: 'Add training context if it matters, then you are done.',
   },
+  {
+    title: 'One last check',
+    description:
+      'Confirm whether Restore should stop before building a routine.',
+  },
 ] as const;
 
 type CheckInFormScreenProps = {
   readonly profile: UserProfile | null;
-  readonly onSave: (input: CheckInInput) => Promise<SaveCheckInResult>;
+  readonly onSubmit: (
+    input: SubmitCheckInInput,
+  ) => Promise<SubmitCheckInResult>;
   readonly onComplete?: () => void;
   readonly onCancel?: () => void;
 };
@@ -139,13 +151,17 @@ export function checkInNeedsScrolling(fontScale: number): boolean {
 
 export function CheckInFormScreen({
   profile,
-  onSave,
+  onSubmit,
   onComplete,
   onCancel,
 }: CheckInFormScreenProps) {
   const { colors } = useRestoreTheme();
   const { fontScale } = useWindowDimensions();
   const [input, setInput] = useState(() => initialInput(profile));
+  const [safetyInput, setSafetyInput] = useState<CheckInSafetyInput | null>(
+    null,
+  );
+  const [safetyOutcome, setSafetyOutcome] = useState<CheckIn | null>(null);
   const [note, setNote] = useState('');
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState<1 | -1>(1);
@@ -257,20 +273,29 @@ export function CheckInFormScreen({
     setTrainingSheetVisible(false);
   };
 
-  const save = async () => {
+  const submit = async () => {
+    if (safetyInput === null) {
+      setErrorMessage('Confirm the stop-sign check before continuing.');
+      return;
+    }
     setSaving(true);
     setErrorMessage(null);
     try {
-      const result = await onSave({
+      const result = await onSubmit({
         ...input,
         note: normalizeOptionalNote(note),
+        safety: safetyInput,
       });
       if (!result.ok) {
         setErrorMessage('Review the check-in values and try again.');
         return;
       }
-      AccessibilityInfo.announceForAccessibility('Check-in saved.');
-      onComplete?.();
+      AccessibilityInfo.announceForAccessibility('Check-in complete.');
+      if (result.checkIn.safetyResult === 'clear') {
+        onComplete?.();
+      } else {
+        setSafetyOutcome(result.checkIn);
+      }
     } catch {
       setErrorMessage(
         'Restore could not save this check-in. Your previous information was not changed.',
@@ -279,6 +304,15 @@ export function CheckInFormScreen({
       setSaving(false);
     }
   };
+
+  if (safetyOutcome !== null) {
+    return (
+      <CheckInSafetyResultScreen
+        checkIn={safetyOutcome}
+        onDone={() => onComplete?.()}
+      />
+    );
+  }
 
   return (
     <Screen
@@ -550,6 +584,16 @@ export function CheckInFormScreen({
             />
           </Card>
         ) : null}
+
+        {step === 4 ? (
+          <CheckInSafetyStep
+            onChange={(safety) => {
+              setSafetyInput(safety);
+              setErrorMessage(null);
+            }}
+            value={safetyInput}
+          />
+        ) : null}
       </Animated.View>
 
       {errorMessage ? (
@@ -580,16 +624,16 @@ export function CheckInFormScreen({
         ) : null}
         <Button
           containerStyle={styles.actionButton}
-          disabled={saving}
+          disabled={saving || (step === stepCount - 1 && safetyInput === null)}
           label={
             step === stepCount - 1
               ? saving
                 ? 'Saving…'
-                : 'Save check-in'
+                : 'Complete check-in'
               : 'Continue'
           }
           onPress={() =>
-            step === stepCount - 1 ? void save() : moveTo(step + 1)
+            step === stepCount - 1 ? void submit() : moveTo(step + 1)
           }
         />
       </View>

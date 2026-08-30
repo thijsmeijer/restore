@@ -53,6 +53,12 @@ low readiness, ordinary post-training soreness, or mild non-worsening
 discomfort within the configured threshold. Clinical review must approve the
 exact thresholds and copy before daily use.
 
+The SAFE-001 engineering ruleset is versioned as
+`check_in_safety_engineering_2026_08_30`. It activates only the explicit
+`blocked` rules above plus the no-signals `clear` result. It does not emit
+`gentle_only`; that state remains in the contract for a later clinically
+reviewed ruleset.
+
 Free text is never silently interpreted as safe. In P0, structured safety inputs
 control the gate; a note that cannot be interpreted remains contextual text.
 

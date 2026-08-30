@@ -129,6 +129,33 @@ export function TodayContent({
               ? ''
               : ` · Readiness ${latest.readiness} of 5`}
           </Text>
+          {latest.safetyResult === 'blocked' ? (
+            <View style={styles.safetyMessage}>
+              <Badge label="Routine paused" tone="danger" />
+              <Text
+                accessibilityRole="alert"
+                style={[styles.body, { color: colors.text }]}
+              >
+                Restore will not build a routine from this check-in. Stop
+                movement that makes what you reported worse and seek appropriate
+                professional care.
+              </Text>
+            </View>
+          ) : null}
+          {latest.safetyResult === 'gentle_only' ? (
+            <View style={styles.safetyMessage}>
+              <Badge label="Gentle only" tone="danger" />
+              <Text style={[styles.body, { color: colors.text }]}>
+                Only reviewed gentle movement can continue from this check-in.
+              </Text>
+            </View>
+          ) : null}
+          {latest.captureStatus === 'captured' ? (
+            <Text style={[styles.body, { color: colors.textMuted }]}>
+              This older check-in was saved before the stop-sign check and is
+              not ready for routine generation.
+            </Text>
+          ) : null}
           <Button label="Check in again" onPress={onCheckIn} />
         </Card>
       ) : null}
@@ -181,5 +208,9 @@ const styles = StyleSheet.create({
   cardHeadingText: {
     flex: 1,
     gap: spacing.xs,
+  },
+  safetyMessage: {
+    alignItems: 'flex-start',
+    gap: spacing.sm,
   },
 });

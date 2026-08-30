@@ -13,6 +13,15 @@ import {
   type CheckInMode,
   type CheckInTrainingStatus,
 } from '@/features/check-in/check-in-options';
+import {
+  evaluateCheckInSafety,
+  type CheckInSafetyInput,
+  type CheckInSafetyReasonCode,
+  type CheckInSafetyResult,
+  type CheckInSafetyRuleId,
+  type CheckInSafetyState,
+  type CheckInSafetyValidationIssueCode,
+} from '@/features/safety/check-in-safety';
 
 export interface CheckInRegionInput {
   readonly regionSlug: BodyRegionSlug;
@@ -39,8 +48,17 @@ export interface CheckInInput {
   readonly note: string | null;
 }
 
+export interface SubmitCheckInInput extends CheckInInput {
+  readonly safety: CheckInSafetyInput;
+}
+
 export interface CheckIn extends CheckInInput {
   readonly id: string;
+  readonly safety: CheckInSafetyInput | null;
+  readonly safetyResult: CheckInSafetyState | null;
+  readonly safetyRulesVersion: string | null;
+  readonly safetyRuleIds: readonly CheckInSafetyRuleId[];
+  readonly safetyReasonCodes: readonly CheckInSafetyReasonCode[];
   readonly observedAt: string;
   readonly localDate: string;
   readonly timeZone: string;
@@ -57,7 +75,8 @@ export type CheckInValidationIssueCode =
   | 'check_in_duration_invalid'
   | 'check_in_readiness_invalid'
   | 'check_in_training_stress_invalid'
-  | 'check_in_note_too_long';
+  | 'check_in_note_too_long'
+  | CheckInSafetyValidationIssueCode;
 
 export interface CheckInValidationIssue {
   readonly code: CheckInValidationIssueCode;
@@ -71,8 +90,19 @@ export type CheckInValidationResult =
       readonly issues: readonly CheckInValidationIssue[];
     };
 
-export type SaveCheckInResult =
+export type SubmitCheckInResult =
   | { readonly ok: true; readonly checkIn: CheckIn }
+  | {
+      readonly ok: false;
+      readonly issues: readonly CheckInValidationIssue[];
+    };
+
+export type SubmitCheckInValidationResult =
+  | {
+      readonly ok: true;
+      readonly value: SubmitCheckInInput;
+      readonly safetyResult: CheckInSafetyResult;
+    }
   | {
       readonly ok: false;
       readonly issues: readonly CheckInValidationIssue[];
@@ -213,6 +243,27 @@ export function validateCheckInInput(
   return issues.length === 0
     ? { ok: true, value: input }
     : { ok: false, issues };
+}
+
+export function validateSubmitCheckInInput(
+  input: SubmitCheckInInput,
+): SubmitCheckInValidationResult {
+  const checkInValidation = validateCheckInInput(input);
+  const safetyEvaluation = evaluateCheckInSafety(input.safety);
+  const issues: CheckInValidationIssue[] = [
+    ...(checkInValidation.ok ? [] : checkInValidation.issues),
+    ...(safetyEvaluation.ok ? [] : safetyEvaluation.issues),
+  ];
+
+  if (issues.length > 0 || !checkInValidation.ok || !safetyEvaluation.ok) {
+    return { ok: false, issues };
+  }
+
+  return {
+    ok: true,
+    value: { ...checkInValidation.value, safety: input.safety },
+    safetyResult: safetyEvaluation.result,
+  };
 }
 
 export function normalizeOptionalNote(value: string): string | null {

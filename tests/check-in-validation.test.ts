@@ -1,5 +1,8 @@
 import type { CheckInInput } from '@/features/check-in/check-in';
-import { validateCheckInInput } from '@/features/check-in/check-in';
+import {
+  validateCheckInInput,
+  validateSubmitCheckInInput,
+} from '@/features/check-in/check-in';
 
 function validInput(): CheckInInput {
   return {
@@ -88,6 +91,25 @@ describe('check-in validation', () => {
           path: '$.training.stress',
         },
       ]),
+    });
+  });
+
+  it('validates the structured safety input before submission', () => {
+    expect(
+      validateSubmitCheckInInput({
+        ...validInput(),
+        safety: {
+          reportedSignals: ['recent_major_trauma', 'recent_major_trauma'],
+        },
+      }),
+    ).toEqual({
+      ok: false,
+      issues: [
+        {
+          code: 'check_in_safety_duplicate_signal',
+          path: '$.safety.reportedSignals',
+        },
+      ],
     });
   });
 });

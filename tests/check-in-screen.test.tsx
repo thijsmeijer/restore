@@ -4,13 +4,18 @@ import { fireEvent, render, waitFor } from '@testing-library/react-native';
 
 import { bodyMapTargets } from '@/features/check-in/accessible-body-map';
 import { BodyObservationSelector } from '@/features/check-in/body-observation-selector';
-import type { CheckIn, CheckInInput } from '@/features/check-in/check-in';
+import type {
+  CheckIn,
+  CheckInInput,
+  SubmitCheckInInput,
+} from '@/features/check-in/check-in';
 import {
   checkInNeedsScrolling,
   CheckInFormScreen,
 } from '@/features/check-in/check-in-form-screen';
 import type { UserProfile } from '@/features/onboarding/profile';
 import { selectableBodyRegionOptions } from '@/features/onboarding/profile-options';
+import { evaluateCheckInSafety } from '@/features/safety/check-in-safety';
 
 const profile: UserProfile = {
   id: '00000000000000000000000000',
@@ -28,14 +33,22 @@ const profile: UserProfile = {
   updatedAt: '2026-08-30T08:00:00.000Z',
 };
 
-function savedCheckIn(input: CheckInInput): CheckIn {
+function savedCheckIn(input: SubmitCheckInInput): CheckIn {
+  const { safety, ...checkInInput } = input;
+  const evaluation = evaluateCheckInSafety(safety);
+  if (!evaluation.ok) throw new Error('Expected valid safety input.');
   return {
     id: '00000000000000000000000001',
-    ...input,
+    ...checkInInput,
+    safety,
+    safetyResult: evaluation.result.state,
+    safetyRulesVersion: evaluation.result.rulesVersion,
+    safetyRuleIds: evaluation.result.matchedRuleIds,
+    safetyReasonCodes: evaluation.result.reasonCodes,
     observedAt: '2026-08-30T08:15:00.000Z',
     localDate: '2026-08-30',
     timeZone: 'Europe/Amsterdam',
-    captureStatus: 'captured',
+    captureStatus: 'submitted',
     createdAt: '2026-08-30T08:15:00.000Z',
   };
 }
@@ -66,14 +79,14 @@ describe('check-in form', () => {
 
   it('captures a fast context snapshot with profile-aware defaults', async () => {
     const onComplete = jest.fn();
-    const onSave = jest.fn(async (input: CheckInInput) => ({
+    const onSubmit = jest.fn(async (input: SubmitCheckInInput) => ({
       ok: true as const,
       checkIn: savedCheckIn(input),
     }));
     const screen = await render(
       <CheckInFormScreen
         onComplete={onComplete}
-        onSave={onSave}
+        onSubmit={onSubmit}
         profile={profile}
       />,
     );
@@ -82,9 +95,9 @@ describe('check-in form', () => {
       screen.getByRole('radio', { name: 'Daily restore' }).props
         .accessibilityState,
     ).toEqual({ selected: true });
-    expect(screen.getByLabelText('Step 1 of 4')).toHaveAccessibilityValue({
+    expect(screen.getByLabelText('Step 1 of 5')).toHaveAccessibilityValue({
       min: 1,
-      max: 4,
+      max: 5,
       now: 1,
     });
     await fireEvent.press(
@@ -94,7 +107,7 @@ describe('check-in form', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Continue' }));
 
     screen.getByRole('header', { name: 'How are you moving?' });
-    screen.getByLabelText('Step 2 of 4');
+    screen.getByLabelText('Step 2 of 5');
     await fireEvent.press(screen.getByRole('radio', { name: 'Good' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Continue' }));
 
@@ -107,7 +120,7 @@ describe('check-in form', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Continue' }));
 
     screen.getByRole('header', { name: 'Any training today?' });
-    screen.getByLabelText('Step 4 of 4');
+    screen.getByLabelText('Step 4 of 5');
     expect(
       screen.getByRole('radio', { name: 'Completed' }).props.accessibilityState,
     ).toEqual({ selected: true });
@@ -118,12 +131,25 @@ describe('check-in form', () => {
       '  Wrists felt worked.  ',
     );
     await fireEvent.press(screen.getByRole('button', { name: 'Done' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Continue' }));
+
+    screen.getByRole('header', { name: 'One last check' });
+    screen.getByLabelText('Step 5 of 5');
+    expect(
+      screen.getByRole('button', { name: 'Complete check-in' }).props
+        .accessibilityState,
+    ).toEqual({ disabled: true });
+    await fireEvent.press(screen.getByRole('checkbox', { name: 'None apply' }));
+    expect(
+      screen.getByRole('button', { name: 'Complete check-in' }).props
+        .accessibilityState,
+    ).toEqual({ disabled: false });
     await fireEvent.press(
-      screen.getByRole('button', { name: 'Save check-in' }),
+      screen.getByRole('button', { name: 'Complete check-in' }),
     );
 
-    await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
-    expect(onSave).toHaveBeenCalledWith({
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+    expect(onSubmit).toHaveBeenCalledWith({
       mode: 'post_workout_reset',
       availableMinutes: 10,
       readiness: 4,
@@ -132,7 +158,48 @@ describe('check-in form', () => {
       regions: [],
       training: { type: 'planche', status: 'completed', stress: 4 },
       note: '  Wrists felt worked.  ',
+      safety: { reportedSignals: [] },
     });
+    expect(onComplete).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows a durable blocked result for a reported stop sign', async () => {
+    const onComplete = jest.fn();
+    const onSubmit = jest.fn(async (input: SubmitCheckInInput) => ({
+      ok: true as const,
+      checkIn: savedCheckIn(input),
+    }));
+    const screen = await render(
+      <CheckInFormScreen
+        onComplete={onComplete}
+        onSubmit={onSubmit}
+        profile={profile}
+      />,
+    );
+
+    for (let step = 0; step < 4; step += 1) {
+      await fireEvent.press(screen.getByRole('button', { name: 'Continue' }));
+    }
+    await fireEvent.press(
+      screen.getByRole('button', { name: 'Review stop signs' }),
+    );
+    await fireEvent.press(
+      screen.getByRole('checkbox', { name: 'New numbness or tingling' }),
+    );
+    await fireEvent.press(screen.getByRole('button', { name: 'Use answers' }));
+    await fireEvent.press(
+      screen.getByRole('button', { name: 'Complete check-in' }),
+    );
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+    screen.getByRole('header', { name: 'Pause here' });
+    screen.getByRole('alert', {
+      name: 'Restore will not build a routine from this check-in.',
+    });
+    screen.getByText('• New numbness or tingling');
+    expect(onComplete).not.toHaveBeenCalled();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Done' }));
     expect(onComplete).toHaveBeenCalledTimes(1);
   });
 
