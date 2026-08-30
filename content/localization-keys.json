@@ -23,6 +23,8 @@
   "body_region.elbow.accessibility",
   "body_region.forearm.name",
   "body_region.forearm.accessibility",
+  "body_region.wrist_hand_fingers.name",
+  "body_region.wrist_hand_fingers.accessibility",
   "body_region.wrist.name",
   "body_region.wrist.accessibility",
   "body_region.hand_fingers.name",

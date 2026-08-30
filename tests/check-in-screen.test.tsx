@@ -1,5 +1,8 @@
+import { useState } from 'react';
+
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 
+import { bodyMapTargets } from '@/features/check-in/accessible-body-map';
 import { BodyObservationSelector } from '@/features/check-in/body-observation-selector';
 import type { CheckIn, CheckInInput } from '@/features/check-in/check-in';
 import {
@@ -7,6 +10,7 @@ import {
   CheckInFormScreen,
 } from '@/features/check-in/check-in-form-screen';
 import type { UserProfile } from '@/features/onboarding/profile';
+import { selectableBodyRegionOptions } from '@/features/onboarding/profile-options';
 
 const profile: UserProfile = {
   id: '00000000000000000000000000',
@@ -36,7 +40,24 @@ function savedCheckIn(input: CheckInInput): CheckIn {
   };
 }
 
+function BodySelectorHarness() {
+  const [value, setValue] = useState<CheckInInput['regions']>([]);
+  return <BodyObservationSelector compact onChange={setValue} value={value} />;
+}
+
 describe('check-in form', () => {
+  it('maps every canonical selectable body region to the front or back map', () => {
+    const mappedSlugs = new Set(
+      Object.values(bodyMapTargets).flatMap((targets) =>
+        targets.flatMap((target) => target.regionSlugs),
+      ),
+    );
+
+    expect([...mappedSlugs].sort()).toEqual(
+      selectableBodyRegionOptions.map((region) => region.slug).sort(),
+    );
+  });
+
   it('keeps the standard flow fixed while allowing large text to scroll', () => {
     expect(checkInNeedsScrolling(1)).toBe(false);
     expect(checkInNeedsScrolling(1.2)).toBe(false);
@@ -115,30 +136,135 @@ describe('check-in form', () => {
     expect(onComplete).toHaveBeenCalledTimes(1);
   });
 
-  it('adds an explicit zero body rating without using a slider', async () => {
+  it('selects the combined wrist, hand, and fingers area without another choice', async () => {
     const onChange = jest.fn();
     const screen = await render(
       <BodyObservationSelector onChange={onChange} value={[]} />,
     );
 
     await fireEvent.press(
-      screen.getByRole('button', { name: 'Add a focus area' }),
+      screen.getByRole('button', { name: 'Choose focus areas' }),
     );
-    await fireEvent.press(screen.getByRole('checkbox', { name: 'Neck' }));
-    await fireEvent.press(screen.getByRole('radio', { name: 'Right' }));
     await fireEvent.press(
-      screen.getByRole('radio', { name: 'Stiffness 0 of 10' }),
+      screen.getByRole('button', {
+        name: 'Right wrist, hand, and fingers, front',
+      }),
     );
-    await fireEvent.press(screen.getByRole('button', { name: 'Add area' }));
+    expect(screen.queryByText('Choose wrist, hand, and fingers')).toBeNull();
+    expect(screen.queryByText('Selected today')).toBeNull();
+    expect(screen.queryByText('Stiffness')).toBeNull();
 
     expect(onChange).toHaveBeenCalledWith([
       {
-        regionSlug: 'neck',
+        regionSlug: 'wrist_hand_fingers',
         side: 'right',
-        stiffness: 0,
+        stiffness: null,
         soreness: null,
         discomfort: null,
       },
     ]);
+  });
+
+  it('combines opposite map taps into both sides and toggles them off', async () => {
+    const screen = await render(<BodySelectorHarness />);
+
+    await fireEvent.press(
+      screen.getByRole('button', { name: 'Choose focus areas' }),
+    );
+    await fireEvent.press(
+      screen.getByRole('button', { name: 'Right elbow, front' }),
+    );
+    expect(
+      screen.getByRole('button', { name: 'Right elbow, front' }).props
+        .accessibilityState,
+    ).toEqual({ selected: true });
+
+    await fireEvent.press(
+      screen.getByRole('button', { name: 'Left elbow, front' }),
+    );
+    expect(
+      screen.getByRole('button', { name: 'Right elbow, front' }).props
+        .accessibilityState,
+    ).toEqual({ selected: true });
+    expect(
+      screen.getByRole('button', { name: 'Left elbow, front' }).props
+        .accessibilityState,
+    ).toEqual({ selected: true });
+
+    await fireEvent.press(
+      screen.getByRole('button', { name: 'Right elbow, front' }),
+    );
+    expect(
+      screen.getByRole('button', { name: 'Right elbow, front' }).props
+        .accessibilityState,
+    ).toEqual({ selected: false });
+    expect(
+      screen.getByRole('button', { name: 'Left elbow, front' }).props
+        .accessibilityState,
+    ).toEqual({ selected: true });
+
+    await fireEvent.press(
+      screen.getByRole('button', { name: 'Left elbow, front' }),
+    );
+    expect(
+      screen.getByRole('button', { name: 'Left elbow, front' }).props
+        .accessibilityState,
+    ).toEqual({ selected: false });
+  });
+
+  it('supports crowded map areas, back view, and the full text list', async () => {
+    const screen = await render(
+      <BodyObservationSelector
+        onChange={jest.fn()}
+        value={[
+          {
+            regionSlug: 'shoulder_front',
+            side: 'right',
+            stiffness: 4,
+            soreness: null,
+            discomfort: null,
+          },
+          {
+            regionSlug: 'calf',
+            side: 'left',
+            stiffness: null,
+            soreness: 2,
+            discomfort: null,
+          },
+        ]}
+      />,
+    );
+
+    await fireEvent.press(
+      screen.getByRole('button', { name: 'Review focus areas' }),
+    );
+    expect(
+      screen.getByRole('button', {
+        name: 'Right shoulder and chest, front',
+      }),
+    ).toHaveAccessibilityValue({ text: 'Selected: 1 area' });
+
+    await fireEvent.press(screen.getByRole('radio', { name: 'Back' }));
+    expect(
+      screen.getByRole('button', {
+        name: 'Left calf, ankle, and foot, back',
+      }),
+    ).toHaveAccessibilityValue({ text: 'Selected: 1 area' });
+
+    await fireEvent.press(
+      screen.getByRole('button', {
+        name: 'Left shoulder and upper back, back',
+      }),
+    );
+    screen.getByRole('header', { name: 'Choose shoulder and upper back' });
+    screen.getByRole('checkbox', { name: 'Rear shoulder' });
+    await fireEvent.press(
+      screen.getByRole('button', { name: 'Back to body map' }),
+    );
+    await fireEvent.press(
+      screen.getByRole('button', { name: 'Choose from list' }),
+    );
+    screen.getByRole('checkbox', { name: 'Neck' });
+    screen.getByRole('button', { name: 'Use body map' });
   });
 });

@@ -43,13 +43,17 @@ describe('onboarding controls', () => {
     await fireEvent.press(screen.getByRole('radio', { name: 'Back' }));
     screen.getByRole('checkbox', { name: 'Rear shoulder' });
 
-    await fireEvent.press(screen.getByRole('checkbox', { name: 'Wrist' }));
-    screen.getByRole('header', { name: 'Wrist: choose a side' });
+    await fireEvent.press(
+      screen.getByRole('checkbox', { name: 'Wrist, hand, and fingers' }),
+    );
+    screen.getByRole('header', {
+      name: 'Wrist, hand, and fingers: choose a side',
+    });
     await fireEvent.press(screen.getByRole('radio', { name: 'Left' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Add area' }));
 
     expect(onChange).toHaveBeenCalledWith([
-      { regionSlug: 'wrist', side: 'left' },
+      { regionSlug: 'wrist_hand_fingers', side: 'left' },
     ]);
   });
 });

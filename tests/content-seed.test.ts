@@ -16,6 +16,7 @@ const expectedBodyRegionSlugs = [
   'lats',
   'elbow',
   'forearm',
+  'wrist_hand_fingers',
   'wrist',
   'hand_fingers',
   'thoracic_spine',
@@ -93,7 +94,7 @@ describe('CONTENT-002 seed catalog', () => {
     );
     expect(
       result.catalog.body_regions.filter((region) => region.selectable),
-    ).toHaveLength(27);
+    ).toHaveLength(26);
     expect(
       result.catalog.body_regions
         .filter((region) => region.parent_slug !== null)
@@ -102,6 +103,8 @@ describe('CONTENT-002 seed catalog', () => {
       ['shoulder_front', 'shoulder'],
       ['shoulder_side', 'shoulder'],
       ['shoulder_rear', 'shoulder'],
+      ['wrist', 'wrist_hand_fingers'],
+      ['hand_fingers', 'wrist_hand_fingers'],
       ['hip_front', 'hip'],
       ['hip_side', 'hip'],
       ['hip_deep_rotation', 'hip'],

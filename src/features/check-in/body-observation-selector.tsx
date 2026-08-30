@@ -3,7 +3,6 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Badge } from '@/components/badge';
 import { Button } from '@/components/button';
-import { NumericStepper } from '@/components/numeric-stepper';
 import { OptionChip } from '@/components/option-chip';
 import {
   SegmentedControl,
@@ -12,16 +11,20 @@ import {
 import { Sheet } from '@/components/sheet';
 import { radius, spacing, typography } from '@/design-system/tokens';
 import { useRestoreTheme } from '@/design-system/use-theme';
+import {
+  AccessibleBodyMap,
+  type BodyMapTarget,
+  type BodyMapView,
+} from '@/features/check-in/accessible-body-map';
 import type { CheckInRegionInput } from '@/features/check-in/check-in';
 import {
   bodyRegionOptions,
+  selectableBodyRegionOptions,
   type BodyRegionSlug,
   type BodySide,
 } from '@/features/onboarding/profile-options';
 
-type BodyView = 'front' | 'back';
-
-const bodyViewOptions: readonly SegmentOption<BodyView>[] = [
+const bodyViewOptions: readonly SegmentOption<BodyMapView>[] = [
   { label: 'Front', value: 'front' },
   { label: 'Back', value: 'back' },
 ];
@@ -53,14 +56,28 @@ function sideLabel(side: BodySide): string {
   }[side];
 }
 
-function ratingsLabel(region: CheckInRegionInput): string {
-  return [
-    region.stiffness === null ? null : `Stiffness ${region.stiffness}`,
-    region.soreness === null ? null : `Soreness ${region.soreness}`,
-    region.discomfort === null ? null : `Discomfort ${region.discomfort}`,
-  ]
-    .filter((entry) => entry !== null)
-    .join(' · ');
+function focusSelection(
+  regionSlug: BodyRegionSlug,
+  side: BodySide,
+): CheckInRegionInput {
+  return {
+    regionSlug,
+    side,
+    stiffness: null,
+    soreness: null,
+    discomfort: null,
+  };
+}
+
+function toggledMapSide(
+  current: BodySide | undefined,
+  tapped: BodyMapTarget['side'],
+): BodySide | null {
+  if (tapped === 'central') return current === 'central' ? null : 'central';
+  if (current === undefined || current === 'central') return tapped;
+  if (current === tapped) return null;
+  if (current === 'bilateral') return tapped === 'left' ? 'right' : 'left';
+  return 'bilateral';
 }
 
 export function BodyObservationSelector({
@@ -71,13 +88,26 @@ export function BodyObservationSelector({
 }: BodyObservationSelectorProps) {
   const { colors } = useRestoreTheme();
   const [visible, setVisible] = useState(false);
-  const [bodyView, setBodyView] = useState<BodyView>('front');
+  const [bodyView, setBodyView] = useState<BodyMapView>('front');
+  const [useRegionList, setUseRegionList] = useState(false);
+  const [candidateTarget, setCandidateTarget] = useState<BodyMapTarget | null>(
+    null,
+  );
   const [editingSlug, setEditingSlug] = useState<BodyRegionSlug | null>(null);
-  const [draft, setDraft] = useState<CheckInRegionInput | null>(null);
+  const [draftSide, setDraftSide] = useState<BodySide>('bilateral');
   const editingRegion = bodyRegionOptions.find(
     (option) => option.slug === editingSlug,
   );
-  const visibleRegions = [...bodyRegionOptions]
+  const editingSelection = value.find(
+    (selection) => selection.regionSlug === editingSlug,
+  );
+  const availableRegions = bodyRegionOptions.filter(
+    (option) =>
+      selectableBodyRegionOptions.some(
+        (selectable) => selectable.slug === option.slug,
+      ) || value.some((selection) => selection.regionSlug === option.slug),
+  );
+  const visibleRegions = [...availableRegions]
     .filter(
       (option) =>
         option.surface === bodyView ||
@@ -92,68 +122,98 @@ export function BodyObservationSelector({
 
   const close = () => {
     setVisible(false);
+    setCandidateTarget(null);
     setEditingSlug(null);
-    setDraft(null);
   };
 
-  const chooseRegion = (slug: BodyRegionSlug) => {
+  const replaceRegion = (selection: CheckInRegionInput | null) => {
+    const slug = selection?.regionSlug ?? editingSlug;
+    if (slug === null) return;
+    const remaining = value.filter((entry) => entry.regionSlug !== slug);
+    onChange(selection === null ? remaining : [...remaining, selection]);
+  };
+
+  const toggleMappedRegion = (
+    slug: BodyRegionSlug,
+    tappedSide: BodyMapTarget['side'],
+  ) => {
+    const current = value.find((entry) => entry.regionSlug === slug);
+    const nextSide = toggledMapSide(current?.side, tappedSide);
+    const remaining = value.filter((entry) => entry.regionSlug !== slug);
+    onChange(
+      nextSide === null
+        ? remaining
+        : [...remaining, focusSelection(slug, nextSide)],
+    );
+    setCandidateTarget(null);
+  };
+
+  const chooseMapTarget = (target: BodyMapTarget) => {
+    const [slug] = target.regionSlugs;
+    if (target.regionSlugs.length === 1 && slug !== undefined) {
+      toggleMappedRegion(slug, target.side);
+      return;
+    }
+    setCandidateTarget(target);
+  };
+
+  const editRegion = (slug: BodyRegionSlug) => {
     const region = bodyRegionOptions.find((option) => option.slug === slug);
     if (region === undefined) return;
     const existing = value.find((entry) => entry.regionSlug === slug);
+    setDraftSide(
+      existing?.side ??
+        (region.laterality === 'central' ? 'central' : 'bilateral'),
+    );
+    setCandidateTarget(null);
     setEditingSlug(slug);
-    setDraft(
-      existing ?? {
-        regionSlug: slug,
-        side: region.laterality === 'central' ? 'central' : 'bilateral',
-        stiffness: null,
-        soreness: null,
-        discomfort: null,
-      },
-    );
   };
 
-  const saveDraft = () => {
-    if (draft === null) return;
-    const withoutCurrent = value.filter(
-      (entry) => entry.regionSlug !== draft.regionSlug,
-    );
-    onChange([...withoutCurrent, draft]);
-    close();
-  };
-
-  const removeDraft = () => {
-    if (draft !== null) {
-      onChange(value.filter((entry) => entry.regionSlug !== draft.regionSlug));
+  const chooseListedRegion = (slug: BodyRegionSlug) => {
+    const region = bodyRegionOptions.find((option) => option.slug === slug);
+    if (region === undefined) return;
+    if (region.laterality === 'central') {
+      const selected = value.some((entry) => entry.regionSlug === slug);
+      const remaining = value.filter((entry) => entry.regionSlug !== slug);
+      onChange(
+        selected ? remaining : [...remaining, focusSelection(slug, 'central')],
+      );
+      return;
     }
-    close();
+    editRegion(slug);
   };
 
-  const hasObservation =
-    draft !== null &&
-    [draft.stiffness, draft.soreness, draft.discomfort].some(
-      (rating) => rating !== null,
-    );
+  const applySide = () => {
+    if (editingSlug === null) return;
+    replaceRegion(focusSelection(editingSlug, draftSide));
+    setEditingSlug(null);
+  };
+
+  const removeEditingRegion = () => {
+    replaceRegion(null);
+    setEditingSlug(null);
+  };
 
   return (
     <>
       <View style={styles.summaryRow}>
         {!compact ? (
           <Text style={[styles.helper, { color: colors.textMuted }]}>
-            Add only the areas you want to rate today. Each rating is optional.
+            Choose the areas you want today&apos;s routine to focus on.
           </Text>
         ) : null}
         <Badge
           accessibilityLabel={
             compact && value.length === 0
               ? 'No body focus areas'
-              : `${value.length} body areas rated`
+              : `${value.length} body focus areas selected`
           }
           label={
             compact
               ? value.length === 0
                 ? 'No focus area'
                 : `${value.length} ${value.length === 1 ? 'focus area' : 'focus areas'}`
-              : `${value.length} rated`
+              : `${value.length} selected`
           }
           tone={value.length > 0 ? 'accent' : 'neutral'}
         />
@@ -167,12 +227,12 @@ export function BodyObservationSelector({
             );
             return (
               <Pressable
-                accessibilityHint="Opens this area's ratings for editing."
-                accessibilityLabel={`${region?.label ?? selection.regionSlug}, ${sideLabel(selection.side)}, ${ratingsLabel(selection)}`}
+                accessibilityHint="Adjusts the side or removes this focus area."
+                accessibilityLabel={`${region?.label ?? selection.regionSlug}, ${sideLabel(selection.side)}`}
                 accessibilityRole="button"
                 key={`${selection.regionSlug}:${selection.side}`}
                 onPress={() => {
-                  chooseRegion(selection.regionSlug);
+                  editRegion(selection.regionSlug);
                   setVisible(true);
                 }}
                 style={({ pressed }) => [
@@ -188,9 +248,6 @@ export function BodyObservationSelector({
                   {region?.label ?? selection.regionSlug} ·{' '}
                   {sideLabel(selection.side)}
                 </Text>
-                <Text style={[styles.areaRatings, { color: colors.textMuted }]}>
-                  {ratingsLabel(selection)}
-                </Text>
               </Pressable>
             );
           })}
@@ -198,26 +255,95 @@ export function BodyObservationSelector({
       ) : null}
 
       <Button
-        label={
-          value.length === 0
-            ? 'Add a focus area'
-            : compact
-              ? 'Review focus areas'
-              : 'Add another area'
-        }
+        label={value.length === 0 ? 'Choose focus areas' : 'Review focus areas'}
         onPress={() => setVisible(true)}
         variant="secondary"
       />
 
       <Sheet
-        closeLabel="Cancel"
+        closeLabel="Done"
         onRequestClose={close}
         title={
-          editingRegion ? `Rate ${editingRegion.label}` : 'Choose a body area'
+          editingRegion
+            ? editingRegion.label
+            : candidateTarget
+              ? `Choose ${candidateTarget.label.toLowerCase()}`
+              : 'Choose focus areas'
         }
         visible={visible}
       >
-        {editingRegion === undefined || draft === null ? (
+        {editingRegion ? (
+          <>
+            {editingRegion.laterality === 'central' ? (
+              <Text style={[styles.helper, { color: colors.textMuted }]}>
+                This area is selected at the center.
+              </Text>
+            ) : (
+              <SegmentedControl
+                label="Side"
+                onChange={setDraftSide}
+                options={
+                  editingRegion.laterality === 'hybrid'
+                    ? hybridSideOptions
+                    : pairedSideOptions
+                }
+                value={draftSide}
+              />
+            )}
+            <Button
+              label={editingSelection ? 'Update area' : 'Add area'}
+              onPress={applySide}
+            />
+            {editingSelection ? (
+              <Button
+                label="Remove area"
+                onPress={removeEditingRegion}
+                variant="destructive"
+              />
+            ) : null}
+            <Button
+              label="Back to body map"
+              onPress={() => setEditingSlug(null)}
+              variant="secondary"
+            />
+          </>
+        ) : candidateTarget ? (
+          <>
+            <Text style={[styles.helper, { color: colors.textMuted }]}>
+              Choose the closest match. It will be selected immediately.
+            </Text>
+            <View style={styles.regionGrid}>
+              {candidateTarget.regionSlugs.map((slug) => {
+                const region = bodyRegionOptions.find(
+                  (option) => option.slug === slug,
+                );
+                if (region === undefined) return null;
+                return (
+                  <OptionChip
+                    accessibilityHint={
+                      value.some((entry) => entry.regionSlug === region.slug)
+                        ? 'Toggles this focus area for the selected side.'
+                        : 'Selects this focus area for the selected side.'
+                    }
+                    key={region.slug}
+                    label={region.label}
+                    onPress={() =>
+                      toggleMappedRegion(region.slug, candidateTarget.side)
+                    }
+                    selected={value.some(
+                      (entry) => entry.regionSlug === region.slug,
+                    )}
+                  />
+                );
+              })}
+            </View>
+            <Button
+              label="Back to body map"
+              onPress={() => setCandidateTarget(null)}
+              variant="secondary"
+            />
+          </>
+        ) : (
           <>
             <SegmentedControl
               label="Body view"
@@ -225,96 +351,49 @@ export function BodyObservationSelector({
               options={bodyViewOptions}
               value={bodyView}
             />
-            <View style={styles.regionGrid}>
-              {visibleRegions.map((region) => {
-                const selected = value.some(
-                  (entry) => entry.regionSlug === region.slug,
-                );
-                return (
-                  <OptionChip
-                    accessibilityHint={
-                      selected
-                        ? 'Opens the saved ratings for this area.'
-                        : 'Opens side and rating choices for this area.'
-                    }
-                    key={region.slug}
-                    label={region.label}
-                    onPress={() => chooseRegion(region.slug)}
-                    selected={selected}
-                  />
-                );
-              })}
-            </View>
-          </>
-        ) : (
-          <>
-            {editingRegion.laterality !== 'central' ? (
-              <SegmentedControl
-                label="Side"
-                onChange={(side) => setDraft({ ...draft, side })}
-                options={
-                  editingRegion.laterality === 'hybrid'
-                    ? hybridSideOptions
-                    : pairedSideOptions
-                }
-                value={draft.side}
-              />
-            ) : null}
-            <Text style={[styles.helper, { color: colors.textMuted }]}>
-              Use 0 when you checked an area and noticed none. Leave a rating
-              unset when you did not assess it.
-            </Text>
-            <NumericStepper
-              label="Stiffness"
-              maximum={10}
-              minimum={0}
-              onChange={(stiffness) => setDraft({ ...draft, stiffness })}
-              value={draft.stiffness}
-              valueSuffix=" of 10"
-              quickValues={[0, 3, 5, 7, 10]}
-            />
-            <NumericStepper
-              label="Soreness"
-              maximum={10}
-              minimum={0}
-              onChange={(soreness) => setDraft({ ...draft, soreness })}
-              value={draft.soreness}
-              valueSuffix=" of 10"
-              quickValues={[0, 3, 5, 7, 10]}
-            />
-            <NumericStepper
-              label="Discomfort"
-              maximum={10}
-              minimum={0}
-              onChange={(discomfort) => setDraft({ ...draft, discomfort })}
-              value={draft.discomfort}
-              valueSuffix=" of 10"
-              quickValues={[0, 3, 5, 7, 10]}
-            />
-            <Button
-              disabled={!hasObservation}
-              label={
-                value.some((entry) => entry.regionSlug === draft.regionSlug)
-                  ? 'Update area'
-                  : 'Add area'
-              }
-              onPress={saveDraft}
-            />
-            {value.some((entry) => entry.regionSlug === draft.regionSlug) ? (
-              <Button
-                label="Remove area"
-                onPress={removeDraft}
-                variant="destructive"
-              />
-            ) : null}
-            <Button
-              label="Choose a different area"
-              onPress={() => {
-                setEditingSlug(null);
-                setDraft(null);
-              }}
-              variant="secondary"
-            />
+
+            {useRegionList ? (
+              <>
+                <View style={styles.regionGrid}>
+                  {visibleRegions.map((region) => (
+                    <OptionChip
+                      accessibilityHint={
+                        value.some((entry) => entry.regionSlug === region.slug)
+                          ? 'Adjusts or removes this focus area.'
+                          : region.laterality === 'central'
+                            ? 'Selects this focus area.'
+                            : 'Opens side selection for this focus area.'
+                      }
+                      key={region.slug}
+                      label={region.label}
+                      onPress={() => chooseListedRegion(region.slug)}
+                      selected={value.some(
+                        (entry) => entry.regionSlug === region.slug,
+                      )}
+                    />
+                  ))}
+                </View>
+                <Button
+                  label="Use body map"
+                  onPress={() => setUseRegionList(false)}
+                  variant="secondary"
+                />
+              </>
+            ) : (
+              <>
+                <AccessibleBodyMap
+                  onPressTarget={chooseMapTarget}
+                  selections={value}
+                  view={bodyView}
+                />
+                <Button
+                  accessibilityHint="Shows every available body area as a text list."
+                  label="Choose from list"
+                  onPress={() => setUseRegionList(true)}
+                  variant="secondary"
+                />
+              </>
+            )}
           </>
         )}
       </Sheet>
@@ -337,17 +416,14 @@ const styles = StyleSheet.create({
   selectedArea: {
     borderRadius: radius.md,
     borderWidth: StyleSheet.hairlineWidth,
-    gap: spacing.xs,
-    minHeight: 64,
-    padding: spacing.md,
+    justifyContent: 'center',
+    minHeight: 52,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
   areaTitle: {
     fontSize: typography.body,
     fontWeight: '700',
-  },
-  areaRatings: {
-    fontSize: typography.caption,
-    lineHeight: 19,
   },
   regionGrid: {
     flexDirection: 'row',

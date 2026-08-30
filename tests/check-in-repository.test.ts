@@ -132,6 +132,47 @@ describe('check-in repository', () => {
     });
   });
 
+  it('stores a focus area without inventing an observation or zero rating', async () => {
+    const ids = sequentialIds();
+    const input: CheckInInput = {
+      mode: 'targeted_area',
+      availableMinutes: 10,
+      readiness: 3,
+      environment: 'home',
+      equipmentIds: [],
+      regions: [
+        {
+          regionSlug: 'neck',
+          side: 'central',
+          stiffness: null,
+          soreness: null,
+          discomfort: null,
+        },
+      ],
+      training: null,
+      note: null,
+    };
+    const repository = new SQLiteCheckInRepository(
+      database,
+      () => new Date(timestamp),
+      () => 'Europe/Amsterdam',
+      ids,
+    );
+
+    await expect(repository.save(input)).resolves.toMatchObject({ ok: true });
+    await expect(repository.getLatest()).resolves.toMatchObject(input);
+    await expect(
+      database.getFirstAsync<{ count: number }>(
+        'SELECT COUNT(*) AS count FROM check_in_focus_regions',
+      ),
+    ).resolves.toEqual({ count: 1 });
+    await expect(
+      database.getFirstAsync<{ count: number }>(
+        'SELECT COUNT(*) AS count FROM check_in_regions',
+      ),
+    ).resolves.toEqual({ count: 0 });
+  });
+
   it('does not create a check-in without a local owner profile', async () => {
     const emptyDatabase = new NodeSQLiteDatabase();
     try {
@@ -188,6 +229,30 @@ describe('check-in repository', () => {
     ).rejects.toThrow('submitted_check_in_immutable');
     await expect(
       database.runAsync(
+        `INSERT INTO check_in_focus_regions (id, check_in_id, region_slug, side)
+        VALUES (?, ?, ?, ?)`,
+        '88888888888888888888888888',
+        result.checkIn.id,
+        'neck',
+        'central',
+      ),
+    ).rejects.toThrow('submitted_check_in_immutable');
+    await expect(
+      database.runAsync(
+        `UPDATE check_in_focus_regions SET side = 'left'
+        WHERE check_in_id = ? AND region_slug = 'wrist'`,
+        result.checkIn.id,
+      ),
+    ).rejects.toThrow('submitted_check_in_immutable');
+    await expect(
+      database.runAsync(
+        `DELETE FROM check_in_focus_regions
+        WHERE check_in_id = ? AND region_slug = 'wrist'`,
+        result.checkIn.id,
+      ),
+    ).rejects.toThrow('submitted_check_in_immutable');
+    await expect(
+      database.runAsync(
         `INSERT INTO check_in_equipment (id, check_in_id, equipment_id)
         VALUES (?, ?, ?)`,
         '99999999999999999999999999',
@@ -212,6 +277,11 @@ describe('check-in repository', () => {
     await expect(
       database.getFirstAsync<{ count: number }>(
         'SELECT COUNT(*) AS count FROM check_in_regions',
+      ),
+    ).resolves.toEqual({ count: 0 });
+    await expect(
+      database.getFirstAsync<{ count: number }>(
+        'SELECT COUNT(*) AS count FROM check_in_focus_regions',
       ),
     ).resolves.toEqual({ count: 0 });
   });

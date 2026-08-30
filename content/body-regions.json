@@ -144,10 +144,22 @@
     "content_version": "0.1.0"
   },
   {
-    "slug": "wrist",
-    "display_name": "body_region.wrist.name",
+    "slug": "wrist_hand_fingers",
+    "display_name": "body_region.wrist_hand_fingers.name",
     "parent_slug": null,
     "selectable": true,
+    "surface": "detail",
+    "laterality": "paired",
+    "geometry_key": "wrist_hand_fingers",
+    "accessibility_key": "body_region.wrist_hand_fingers.accessibility",
+    "active": true,
+    "content_version": "0.1.0"
+  },
+  {
+    "slug": "wrist",
+    "display_name": "body_region.wrist.name",
+    "parent_slug": "wrist_hand_fingers",
+    "selectable": false,
     "surface": "detail",
     "laterality": "paired",
     "geometry_key": "wrist",
@@ -158,8 +170,8 @@
   {
     "slug": "hand_fingers",
     "display_name": "body_region.hand_fingers.name",
-    "parent_slug": null,
-    "selectable": true,
+    "parent_slug": "wrist_hand_fingers",
+    "selectable": false,
     "surface": "detail",
     "laterality": "paired",
     "geometry_key": "hand_fingers",

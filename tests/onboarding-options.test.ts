@@ -4,6 +4,7 @@ import path from 'node:path';
 import {
   bodyRegionOptions,
   equipmentOptions,
+  selectableBodyRegionOptions,
   trainingTypeGroups,
   trainingTypeOptions,
 } from '@/features/onboarding/profile-options';
@@ -30,11 +31,15 @@ describe('onboarding option catalogs', () => {
           surface,
         })),
     ).toEqual(
-      bodyRegionOptions.map(({ slug, laterality, surface }) => ({
+      selectableBodyRegionOptions.map(({ slug, laterality, surface }) => ({
         slug,
         laterality,
         surface,
       })),
+    );
+
+    expect(bodyRegionOptions.map((region) => region.slug)).toEqual(
+      expect.arrayContaining(['wrist', 'hand_fingers']),
     );
   });
 

@@ -22,10 +22,17 @@ describe('check-in validation', () => {
     });
   });
 
-  it('preserves explicit zero separately from a missing rating', () => {
+  it('preserves an unrated focus separately from an explicit zero rating', () => {
     const input: CheckInInput = {
       ...validInput(),
       regions: [
+        {
+          regionSlug: 'neck',
+          side: 'central',
+          stiffness: null,
+          soreness: null,
+          discomfort: null,
+        },
         {
           regionSlug: 'wrist',
           side: 'right',
@@ -39,7 +46,7 @@ describe('check-in validation', () => {
     expect(validateCheckInInput(input)).toEqual({ ok: true, value: input });
   });
 
-  it('rejects empty region observations and out-of-range values', () => {
+  it('rejects incompatible sides and out-of-range values', () => {
     const result = validateCheckInInput({
       ...validInput(),
       availableMinutes: 91,
@@ -71,10 +78,6 @@ describe('check-in validation', () => {
         {
           code: 'check_in_body_side_incompatible',
           path: '$.regions[0].side',
-        },
-        {
-          code: 'check_in_region_observation_required',
-          path: '$.regions[0]',
         },
         {
           code: 'check_in_rating_invalid',

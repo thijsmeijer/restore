@@ -45,8 +45,9 @@ Aggregation for charts or targeting is an explicit, versioned calculation.
 | `lats` | Lats | — | yes | back | paired |
 | `elbow` | Elbow | — | yes | both | paired |
 | `forearm` | Forearm | — | yes | both | paired |
-| `wrist` | Wrist | — | yes | detail | paired |
-| `hand_fingers` | Hand and fingers | — | yes | detail | paired |
+| `wrist_hand_fingers` | Wrist, hand, and fingers | — | yes | detail | paired |
+| `wrist` | Wrist | `wrist_hand_fingers` | no | detail | paired |
+| `hand_fingers` | Hand and fingers | `wrist_hand_fingers` | no | detail | paired |
 | `thoracic_spine` | Thoracic spine | — | yes | back | central |
 | `lumbar_spine` | Lower back | — | yes | back | hybrid |
 | `pelvis_si_area` | Pelvic and SI-area region | — | yes | back | hybrid |
@@ -65,6 +66,12 @@ Aggregation for charts or targeting is an explicit, versioned calculation.
 
 The `pelvis_si_area` label is anatomical navigation only and must never be used
 to imply an SI-joint diagnosis.
+
+New profile and check-in selection uses `wrist_hand_fingers` as one focus area.
+The non-selectable `wrist` and `hand_fingers` children remain stable for older
+records and precise exercise-effect metadata; they are not offered as separate
+questions to the user. Any later target expansion from the composite parent to
+its children must be explicit and versioned.
 
 ## Canonical movement and intent tags
 

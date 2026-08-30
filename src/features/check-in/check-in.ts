@@ -54,7 +54,6 @@ export type CheckInValidationIssueCode =
   | 'check_in_duplicate_value'
   | 'check_in_body_side_incompatible'
   | 'check_in_rating_invalid'
-  | 'check_in_region_observation_required'
   | 'check_in_duration_invalid'
   | 'check_in_readiness_invalid'
   | 'check_in_training_stress_invalid'
@@ -187,12 +186,6 @@ export function validateCheckInInput(
           path: `$.regions[${index}].${name}`,
         });
       }
-    }
-    if (ratings.every(([, value]) => value === null)) {
-      issues.push({
-        code: 'check_in_region_observation_required',
-        path: `$.regions[${index}]`,
-      });
     }
   });
 
