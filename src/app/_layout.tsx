@@ -7,6 +7,7 @@ import { AppErrorBoundary } from '@/components/app-error-boundary';
 import { RestoreDatabaseProvider } from '@/db/database-provider';
 import { colorTokens } from '@/design-system/tokens';
 import { CheckInProvider } from '@/features/check-in/check-in-context';
+import { LibraryProvider } from '@/features/library/library-context';
 import { ProfileProvider } from '@/features/onboarding/profile-context';
 import { ProfileNavigation } from '@/features/onboarding/profile-navigation';
 
@@ -33,9 +34,11 @@ export default function RootLayout() {
             }}
           >
             <ProfileProvider>
-              <CheckInProvider>
-                <ProfileNavigation />
-              </CheckInProvider>
+              <LibraryProvider>
+                <CheckInProvider>
+                  <ProfileNavigation />
+                </CheckInProvider>
+              </LibraryProvider>
             </ProfileProvider>
             <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
           </ThemeProvider>

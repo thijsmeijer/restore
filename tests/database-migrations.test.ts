@@ -46,7 +46,7 @@ describe('database migrations', () => {
     await expect(
       new SQLiteSchemaMetadataRepository(database).get(),
     ).resolves.toMatchObject({
-      schemaVersion: 5,
+      schemaVersion: 6,
       migrationState: 'idle',
       lastIntegrityResult: 'ok',
       updatedAt: timestamp,
@@ -58,22 +58,23 @@ describe('database migrations', () => {
 
     expect(result).toEqual({
       fromVersion: 0,
-      toVersion: 5,
+      toVersion: 6,
       appliedMigrationIds: [
         '0001_schema_lifecycle',
         '0002_user_profile',
         '0003_check_ins',
         '0004_check_in_focus_regions',
         '0005_check_in_safety',
+        '0006_exercise_library',
       ],
     });
     await expect(
       new SQLiteSchemaMetadataRepository(database).get(),
     ).resolves.toEqual({
-      schemaVersion: 5,
+      schemaVersion: 6,
       contentVersion: null,
       migrationState: 'idle',
-      lastSuccessfulMigrationId: '0005_check_in_safety',
+      lastSuccessfulMigrationId: '0006_exercise_library',
       lastMigratedAt: timestamp,
       lastSuccessfulBackupId: null,
       lastSuccessfulBackupChecksum: null,
@@ -141,6 +142,17 @@ describe('database migrations', () => {
         checksum: migrations[4]?.checksum,
         failureReasonCode: null,
       },
+      {
+        migrationId: '0006_exercise_library',
+        fromSchemaVersion: 5,
+        toSchemaVersion: 6,
+        startedAt: timestamp,
+        completedAt: timestamp,
+        backupId: null,
+        status: 'completed',
+        checksum: migrations[5]?.checksum,
+        failureReasonCode: null,
+      },
     ]);
   });
 
@@ -150,13 +162,13 @@ describe('database migrations', () => {
     await expect(
       runMigrations(database, migrations, () => timestamp),
     ).resolves.toEqual({
-      fromVersion: 5,
-      toVersion: 5,
+      fromVersion: 6,
+      toVersion: 6,
       appliedMigrationIds: [],
     });
     await expect(
       new SQLiteMigrationHistoryRepository(database).list(),
-    ).resolves.toHaveLength(5);
+    ).resolves.toHaveLength(6);
   });
 
   it('rolls back an interrupted migration so startup can retry from the prior version', async () => {
@@ -185,12 +197,12 @@ describe('database migrations', () => {
       runMigrations(database, migrations, () => timestamp),
     ).resolves.toMatchObject({
       fromVersion: 0,
-      toVersion: 5,
+      toVersion: 6,
     });
   });
 
   it('stops when the on-device schema is newer than this app supports', async () => {
-    await database.execAsync('PRAGMA user_version = 6');
+    await database.execAsync('PRAGMA user_version = 7');
 
     await expect(
       runMigrations(database, migrations, () => timestamp),
@@ -205,9 +217,9 @@ describe('database migrations', () => {
       'CREATE TABLE owner_data_probe (id INTEGER PRIMARY KEY)',
     ];
     const ownerDataMigration: Migration = {
-      id: '0006_owner_data_probe',
-      fromVersion: 5,
-      toVersion: 6,
+      id: '0007_owner_data_probe',
+      fromVersion: 6,
+      toVersion: 7,
       checksum: checksum(ownerDataMigrationStatements),
       affectsOwnerData: true,
       statements: ownerDataMigrationStatements,
@@ -224,7 +236,7 @@ describe('database migrations', () => {
     });
     await expect(
       database.getFirstAsync<{ user_version: number }>('PRAGMA user_version'),
-    ).resolves.toEqual({ user_version: 5 });
+    ).resolves.toEqual({ user_version: 6 });
     await expect(
       database.getFirstAsync<{ name: string }>(
         "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'owner_data_probe'",
@@ -239,12 +251,13 @@ describe('database migrations', () => {
       runMigrations(database, migrations, () => timestamp),
     ).resolves.toEqual({
       fromVersion: 1,
-      toVersion: 5,
+      toVersion: 6,
       appliedMigrationIds: [
         '0002_user_profile',
         '0003_check_ins',
         '0004_check_in_focus_regions',
         '0005_check_in_safety',
+        '0006_exercise_library',
       ],
     });
     await expect(
@@ -364,7 +377,7 @@ describe('database migrations', () => {
     );
 
     await expect(
-      runMigrations(database, migrations, () => timestamp),
+      runMigrations(database, migrations.slice(0, 5), () => timestamp),
     ).resolves.toEqual({
       fromVersion: 4,
       toVersion: 5,
@@ -387,6 +400,60 @@ describe('database migrations', () => {
         'SELECT COUNT(*) AS count FROM check_in_safety_responses',
       ),
     ).resolves.toEqual({ count: 0 });
+  });
+
+  it('adds library storage to schema five without rewriting an existing profile', async () => {
+    await runMigrations(database, migrations.slice(0, 5), () => timestamp);
+    const profileId = '00000000000000000000000000';
+    await database.runAsync(
+      `INSERT INTO user_profiles (
+        id, preferred_quick_minutes, onboarding_completed_at,
+        safety_rules_version, safety_acknowledged_at, created_at, updated_at
+      ) VALUES (?, 7, ?, 'test_rules', ?, ?, ?)`,
+      profileId,
+      timestamp,
+      timestamp,
+      timestamp,
+      timestamp,
+    );
+
+    await expect(
+      runMigrations(database, migrations, () => timestamp),
+    ).resolves.toEqual({
+      fromVersion: 5,
+      toVersion: 6,
+      appliedMigrationIds: ['0006_exercise_library'],
+    });
+    await expect(
+      database.getFirstAsync<{ preferred_quick_minutes: number }>(
+        'SELECT preferred_quick_minutes FROM user_profiles WHERE id = ?',
+        profileId,
+      ),
+    ).resolves.toEqual({ preferred_quick_minutes: 7 });
+    await expect(
+      database.getAllAsync<{ name: string }>(
+        `SELECT name FROM sqlite_master
+        WHERE type = 'table' AND name IN (
+          'content_packs', 'exercises', 'exercise_preferences'
+        ) ORDER BY name`,
+      ),
+    ).resolves.toEqual([
+      { name: 'content_packs' },
+      { name: 'exercise_preferences' },
+      { name: 'exercises' },
+    ]);
+
+    await expect(
+      database.runAsync(
+        `INSERT INTO exercise_preferences (
+          id, user_profile_id, exercise_id, favorite, avoid_state,
+          avoid_until, created_at, updated_at
+        ) VALUES ('preference', ?, 'exercise', 0, 'temporary', NULL, ?, ?)`,
+        profileId,
+        timestamp,
+        timestamp,
+      ),
+    ).rejects.toThrow();
   });
 
   it('rejects a non-contiguous or modified migration catalog before applying SQL', async () => {

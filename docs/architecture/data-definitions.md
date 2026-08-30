@@ -272,6 +272,18 @@ and links to it.
 - Avoid changes are explicit user actions; inferred behavior never creates a
   permanent avoid.
 
+Schema version 6 implements the LIB-001 subset: stable exercise identity,
+independent favorite and avoid fields, optional avoid expiry, owner and
+created/updated timestamps. The current UI creates only explicit `permanent`
+avoids and can restore them to `none`; the schema retains `temporary` for the
+later in-session stop flow. Personal cues and manual priority remain deferred.
+The migration adds new tables only and does not rewrite existing owner data.
+
+The same schema installs the validated bundled content pack and exact resolved
+exercise payloads atomically. Startup reuses an identical installed version but
+fails closed if its checksum or an immutable exercise payload differs. SQLite,
+not the bundled source files or UI state, is the runtime source of truth.
+
 ### `exercise_response_stats`
 
 Rebuildable derived data keyed by exercise identity, region, and P0 context:
