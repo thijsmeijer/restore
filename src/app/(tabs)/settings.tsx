@@ -43,13 +43,19 @@ export default function SettingsScreen() {
             Developer
           </Text>
           <Text style={[styles.body, { color: colors.textMuted }]}>
-            Run the synthetic generator suite and inspect a privacy-redacted
-            decision trace.
+            Run synthetic checks, inspect a privacy-redacted decision trace, and
+            review session-player controls without starting a movement.
           </Text>
           <Button
             accessibilityHint="Opens local generator diagnostics."
             label="Open generator diagnostics"
             onPress={() => router.push('/developer/generator')}
+            variant="secondary"
+          />
+          <Button
+            accessibilityHint="Opens a controls-only player preview with no assigned movement."
+            label="Preview session controls"
+            onPress={() => router.push('/developer/player')}
             variant="secondary"
           />
         </Card>

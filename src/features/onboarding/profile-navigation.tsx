@@ -24,7 +24,9 @@ export function ProfileNavigation() {
         <Stack.Screen name="profile" />
         <Stack.Screen name="exercise/[exerciseId]" />
         <Stack.Screen name="routine/[routineId]" />
+        <Stack.Screen name="session/[routineId]" />
         <Stack.Screen name="developer/generator" />
+        <Stack.Screen name="developer/player" />
       </Stack.Protected>
     </Stack>
   );
