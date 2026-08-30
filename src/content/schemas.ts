@@ -42,6 +42,11 @@ export const environmentSchema = z.enum([
   'custom',
 ]);
 export const safetyStateSchema = z.enum(['clear', 'gentle_only']);
+export const generatorSafetyStateSchema = z.enum([
+  'clear',
+  'gentle_only',
+  'blocked',
+]);
 export const bodySideSchema = z.enum(['central', 'left', 'right', 'bilateral']);
 export const bodySurfaceSchema = z.enum([
   'front',
@@ -97,6 +102,31 @@ export const sessionPhaseSchema = z.enum([
   'reassessment',
 ]);
 
+export const exerciseIntensitySchema = z.enum([
+  'very_gentle',
+  'gentle',
+  'moderate',
+]);
+
+export const spaceRequirementSchema = z.enum([
+  'minimal',
+  'small',
+  'medium',
+  'large',
+]);
+
+export const demandFlagSchema = z.enum([
+  'weight_bearing',
+  'balance',
+  'end_range',
+  'neck_position',
+  'wrist_extension',
+  'shoulder_extension',
+  'spinal_flexion',
+  'spinal_extension',
+  'equipment_stability',
+]);
+
 export const bodyRegionSchema = z.strictObject({
   slug: canonicalSlugSchema,
   display_name: localizationKeySchema,
@@ -119,14 +149,14 @@ export const equipmentSchema = z.strictObject({
   content_version: contentVersionSchema,
 });
 
-const reviewEntrySchema = z.strictObject({
+export const reviewEntrySchema = z.strictObject({
   reviewer_role: z.enum(['engineering', 'clinical']),
   reviewed_at: utcTimestampSchema,
   reviewed_version: z.number().int().positive(),
   notes_reference: z.string().min(1).max(256).nullable(),
 });
 
-const reviewSchema = z.strictObject({
+export const reviewSchema = z.strictObject({
   engineering: reviewEntrySchema.nullable(),
   clinical: reviewEntrySchema.nullable(),
 });
@@ -192,7 +222,7 @@ const requirementsSchema = z.strictObject({
     'hanging',
     'supported',
   ]),
-  space: z.enum(['minimal', 'small', 'medium', 'large']),
+  space: spaceRequirementSchema,
   setup_cost: z.enum(['low', 'medium', 'high']),
 });
 
@@ -202,19 +232,7 @@ const contraindicationMatchSchema = z.strictObject({
   symptom_qualities: z.array(canonicalSlugSchema),
   rating_threshold: z.number().int().min(0).max(10).nullable(),
   recent_trauma: z.boolean().nullable(),
-  demand_flags: z.array(
-    z.enum([
-      'weight_bearing',
-      'balance',
-      'end_range',
-      'neck_position',
-      'wrist_extension',
-      'shoulder_extension',
-      'spinal_flexion',
-      'spinal_extension',
-      'equipment_stability',
-    ]),
-  ),
+  demand_flags: z.array(demandFlagSchema),
   allowed_safety_states: z.array(safetyStateSchema).min(1),
 });
 
@@ -282,7 +300,7 @@ export const exerciseSchema = z.strictObject({
   summary_key: localizationKeySchema,
   instructions: instructionsSchema,
   prescription: prescriptionSchema,
-  intensity: z.enum(['very_gentle', 'gentle', 'moderate']),
+  intensity: exerciseIntensitySchema,
   phases: z.array(sessionPhaseSchema).min(1),
   movement_patterns: z.array(movementPatternSchema).min(1),
   effects: z.array(effectSchema).min(1),
@@ -297,13 +315,37 @@ export const exerciseSchema = z.strictObject({
   retired_at: utcTimestampSchema.nullable(),
 });
 
+export const routineTemplatePhaseSchema = z.strictObject({
+  phase: sessionPhaseSchema,
+  requirement: z.enum(['required', 'optional']),
+  minimum_share_basis_points: z.number().int().min(0).max(10_000),
+  target_share_basis_points: z.number().int().min(0).max(10_000),
+  maximum_share_basis_points: z.number().int().min(0).max(10_000),
+});
+
+export const routineTemplateSchema = z.strictObject({
+  id: stableIdSchema,
+  version: z.number().int().positive(),
+  status: reviewStatusSchema,
+  mode: canonicalSlugSchema,
+  minimum_minutes: z.number().int().min(2).max(90),
+  maximum_minutes: z.number().int().min(2).max(90),
+  allowed_safety_states: z.array(safetyStateSchema).min(1),
+  intensity_ceiling: exerciseIntensitySchema,
+  phases: z.array(routineTemplatePhaseSchema).min(1),
+  fallback_policy: z.literal('explicit_failure'),
+  review: reviewSchema,
+  created_at: utcTimestampSchema,
+  retired_at: utcTimestampSchema.nullable(),
+});
+
 export const contentManifestSchema = z.strictObject({
   schema_version: z.literal(1),
   content_version: contentVersionSchema,
   created_at: utcTimestampSchema,
   review_status: reviewStatusSchema,
   exercises: z.array(exerciseSchema),
-  routine_templates: z.array(z.unknown()),
+  routine_templates: z.array(routineTemplateSchema),
 });
 
 export const contentCatalogSchema = z.strictObject({
@@ -318,5 +360,7 @@ export const contentCatalogSchema = z.strictObject({
 export type BodyRegion = z.infer<typeof bodyRegionSchema>;
 export type Equipment = z.infer<typeof equipmentSchema>;
 export type Exercise = z.infer<typeof exerciseSchema>;
+export type RoutineTemplate = z.infer<typeof routineTemplateSchema>;
+export type RoutineTemplatePhase = z.infer<typeof routineTemplatePhaseSchema>;
 export type ContentManifest = z.infer<typeof contentManifestSchema>;
 export type ContentCatalog = z.infer<typeof contentCatalogSchema>;

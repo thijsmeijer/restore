@@ -1,7 +1,11 @@
 import { spawnSync } from 'node:child_process';
 
 import { validateContentCatalog } from '@/content/validation';
-import type { ContentCatalog, Exercise } from '@/content/schemas';
+import type {
+  ContentCatalog,
+  Exercise,
+  RoutineTemplate,
+} from '@/content/schemas';
 
 const firstExerciseId = '01J00000000000000000000000';
 const secondExerciseId = '01J00000000000000000000001';
@@ -79,6 +83,39 @@ function validExercise(): Exercise {
       progression_step: null,
       extendable: false,
     },
+    review: { engineering: null, clinical: null },
+    created_at: '2026-08-30T00:00:00Z',
+    retired_at: null,
+  };
+}
+
+function validTemplate(): RoutineTemplate {
+  return {
+    id: '01J00000000000000000000020',
+    version: 1,
+    status: 'draft',
+    mode: 'daily_restore',
+    minimum_minutes: 5,
+    maximum_minutes: 20,
+    allowed_safety_states: ['clear'],
+    intensity_ceiling: 'gentle',
+    phases: [
+      {
+        phase: 'arrival',
+        requirement: 'required',
+        minimum_share_basis_points: 1_000,
+        target_share_basis_points: 2_000,
+        maximum_share_basis_points: 3_000,
+      },
+      {
+        phase: 'targeted_mobility',
+        requirement: 'required',
+        minimum_share_basis_points: 4_000,
+        target_share_basis_points: 8_000,
+        maximum_share_basis_points: 9_000,
+      },
+    ],
+    fallback_policy: 'explicit_failure',
     review: { engineering: null, clinical: null },
     created_at: '2026-08-30T00:00:00Z',
     retired_at: null,
@@ -296,18 +333,37 @@ describe('content validation', () => {
     );
   });
 
-  it('rejects duplicate identities, slugs, and unsupported routine templates', () => {
+  it('rejects duplicate exercise identities and slugs', () => {
     const catalog = validCatalog();
     catalog.manifest.exercises.push(
       structuredClone(catalog.manifest.exercises[0]!),
     );
-    catalog.manifest.routine_templates.push({ id: 'not_yet_supported' });
 
     expect(issueCodes(catalog)).toEqual(
       expect.arrayContaining([
         'content_duplicate_id',
         'content_duplicate_value',
-        'content_unsupported_routine_template',
+      ]),
+    );
+  });
+
+  it('validates routine-template duration, review, mode, and phase budgets', () => {
+    const catalog = validCatalog();
+    const template = validTemplate();
+    catalog.manifest.routine_templates.push(template);
+
+    expect(validateContentCatalog(catalog).ok).toBe(true);
+
+    template.maximum_minutes = 4;
+    template.mode = 'unknown_mode';
+    template.phases[0]!.target_share_basis_points = 1_000;
+    template.allowed_safety_states = ['gentle_only'];
+    expect(issueCodes(catalog)).toEqual(
+      expect.arrayContaining([
+        'content_template_duration_invalid',
+        'content_unknown_mode',
+        'content_template_phase_budget_invalid',
+        'content_template_safety_invalid',
       ]),
     );
   });
