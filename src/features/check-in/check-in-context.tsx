@@ -13,8 +13,8 @@ import { ExpoSQLiteConnection } from '@/db/expo-sqlite-adapter';
 import { SQLiteCheckInRepository } from '@/db/repositories/check-in-repository';
 import type {
   CheckIn,
-  CheckInInput,
-  SaveCheckInResult,
+  SubmitCheckInInput,
+  SubmitCheckInResult,
 } from '@/features/check-in/check-in';
 
 type CheckInState =
@@ -24,7 +24,7 @@ type CheckInState =
 
 type CheckInContextValue = CheckInState & {
   readonly reload: () => Promise<void>;
-  readonly save: (input: CheckInInput) => Promise<SaveCheckInResult>;
+  readonly submit: (input: SubmitCheckInInput) => Promise<SubmitCheckInResult>;
 };
 
 const CheckInContext = createContext<CheckInContextValue | null>(null);
@@ -66,9 +66,9 @@ export function CheckInProvider({ children }: PropsWithChildren) {
     };
   }, [repository]);
 
-  const save = useCallback(
-    async (input: CheckInInput): Promise<SaveCheckInResult> => {
-      const result = await repository.save(input);
+  const submit = useCallback(
+    async (input: SubmitCheckInInput): Promise<SubmitCheckInResult> => {
+      const result = await repository.submit(input);
       if (result.ok) {
         setState({ status: 'ready', latest: result.checkIn });
       }
@@ -78,7 +78,7 @@ export function CheckInProvider({ children }: PropsWithChildren) {
   );
 
   return (
-    <CheckInContext.Provider value={{ ...state, reload, save }}>
+    <CheckInContext.Provider value={{ ...state, reload, submit }}>
       {children}
     </CheckInContext.Provider>
   );

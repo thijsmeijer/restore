@@ -13,7 +13,7 @@ export default function CheckInRoute() {
     <CheckInFormScreen
       onCancel={() => router.back()}
       onComplete={() => router.back()}
-      onSave={checkIns.save}
+      onSubmit={checkIns.submit}
       profile={profile.profile}
     />
   );

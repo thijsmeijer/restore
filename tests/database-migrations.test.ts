@@ -46,7 +46,7 @@ describe('database migrations', () => {
     await expect(
       new SQLiteSchemaMetadataRepository(database).get(),
     ).resolves.toMatchObject({
-      schemaVersion: 4,
+      schemaVersion: 5,
       migrationState: 'idle',
       lastIntegrityResult: 'ok',
       updatedAt: timestamp,
@@ -58,21 +58,22 @@ describe('database migrations', () => {
 
     expect(result).toEqual({
       fromVersion: 0,
-      toVersion: 4,
+      toVersion: 5,
       appliedMigrationIds: [
         '0001_schema_lifecycle',
         '0002_user_profile',
         '0003_check_ins',
         '0004_check_in_focus_regions',
+        '0005_check_in_safety',
       ],
     });
     await expect(
       new SQLiteSchemaMetadataRepository(database).get(),
     ).resolves.toEqual({
-      schemaVersion: 4,
+      schemaVersion: 5,
       contentVersion: null,
       migrationState: 'idle',
-      lastSuccessfulMigrationId: '0004_check_in_focus_regions',
+      lastSuccessfulMigrationId: '0005_check_in_safety',
       lastMigratedAt: timestamp,
       lastSuccessfulBackupId: null,
       lastSuccessfulBackupChecksum: null,
@@ -129,6 +130,17 @@ describe('database migrations', () => {
         checksum: migrations[3]?.checksum,
         failureReasonCode: null,
       },
+      {
+        migrationId: '0005_check_in_safety',
+        fromSchemaVersion: 4,
+        toSchemaVersion: 5,
+        startedAt: timestamp,
+        completedAt: timestamp,
+        backupId: null,
+        status: 'completed',
+        checksum: migrations[4]?.checksum,
+        failureReasonCode: null,
+      },
     ]);
   });
 
@@ -138,13 +150,13 @@ describe('database migrations', () => {
     await expect(
       runMigrations(database, migrations, () => timestamp),
     ).resolves.toEqual({
-      fromVersion: 4,
-      toVersion: 4,
+      fromVersion: 5,
+      toVersion: 5,
       appliedMigrationIds: [],
     });
     await expect(
       new SQLiteMigrationHistoryRepository(database).list(),
-    ).resolves.toHaveLength(4);
+    ).resolves.toHaveLength(5);
   });
 
   it('rolls back an interrupted migration so startup can retry from the prior version', async () => {
@@ -173,12 +185,12 @@ describe('database migrations', () => {
       runMigrations(database, migrations, () => timestamp),
     ).resolves.toMatchObject({
       fromVersion: 0,
-      toVersion: 4,
+      toVersion: 5,
     });
   });
 
   it('stops when the on-device schema is newer than this app supports', async () => {
-    await database.execAsync('PRAGMA user_version = 5');
+    await database.execAsync('PRAGMA user_version = 6');
 
     await expect(
       runMigrations(database, migrations, () => timestamp),
@@ -193,9 +205,9 @@ describe('database migrations', () => {
       'CREATE TABLE owner_data_probe (id INTEGER PRIMARY KEY)',
     ];
     const ownerDataMigration: Migration = {
-      id: '0005_owner_data_probe',
-      fromVersion: 4,
-      toVersion: 5,
+      id: '0006_owner_data_probe',
+      fromVersion: 5,
+      toVersion: 6,
       checksum: checksum(ownerDataMigrationStatements),
       affectsOwnerData: true,
       statements: ownerDataMigrationStatements,
@@ -212,7 +224,7 @@ describe('database migrations', () => {
     });
     await expect(
       database.getFirstAsync<{ user_version: number }>('PRAGMA user_version'),
-    ).resolves.toEqual({ user_version: 4 });
+    ).resolves.toEqual({ user_version: 5 });
     await expect(
       database.getFirstAsync<{ name: string }>(
         "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'owner_data_probe'",
@@ -227,11 +239,12 @@ describe('database migrations', () => {
       runMigrations(database, migrations, () => timestamp),
     ).resolves.toEqual({
       fromVersion: 1,
-      toVersion: 4,
+      toVersion: 5,
       appliedMigrationIds: [
         '0002_user_profile',
         '0003_check_ins',
         '0004_check_in_focus_regions',
+        '0005_check_in_safety',
       ],
     });
     await expect(
@@ -249,6 +262,11 @@ describe('database migrations', () => {
         "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'check_in_focus_regions'",
       ),
     ).resolves.toEqual({ name: 'check_in_focus_regions' });
+    await expect(
+      database.getFirstAsync<{ name: string }>(
+        "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'check_in_safety_responses'",
+      ),
+    ).resolves.toEqual({ name: 'check_in_safety_responses' });
   });
 
   it('adds focus storage to schema three without rewriting existing observations', async () => {
@@ -294,7 +312,7 @@ describe('database migrations', () => {
     );
 
     await expect(
-      runMigrations(database, migrations, () => timestamp),
+      runMigrations(database, migrations.slice(0, 4), () => timestamp),
     ).resolves.toEqual({
       fromVersion: 3,
       toVersion: 4,
@@ -309,6 +327,64 @@ describe('database migrations', () => {
     await expect(
       database.getFirstAsync<{ count: number }>(
         'SELECT COUNT(*) AS count FROM check_in_focus_regions',
+      ),
+    ).resolves.toEqual({ count: 0 });
+  });
+
+  it('adds safety storage to schema four without submitting an older capture', async () => {
+    await runMigrations(database, migrations.slice(0, 4), () => timestamp);
+    const profileId = '00000000000000000000000000';
+    const checkInId = '00000000000000000000000001';
+    await database.runAsync(
+      `INSERT INTO user_profiles (
+        id, onboarding_completed_at, safety_rules_version,
+        safety_acknowledged_at, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?)`,
+      profileId,
+      timestamp,
+      'test_rules',
+      timestamp,
+      timestamp,
+      timestamp,
+    );
+    await database.runAsync(
+      `INSERT INTO check_ins (
+        id, user_profile_id, observed_at, local_date, time_zone,
+        session_mode, available_minutes, environment,
+        capture_status, source, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, 'daily_restore', 10, 'home',
+        'captured', 'manual', ?, ?)`,
+      checkInId,
+      profileId,
+      timestamp,
+      '2026-08-30',
+      'Europe/Amsterdam',
+      timestamp,
+      timestamp,
+    );
+
+    await expect(
+      runMigrations(database, migrations, () => timestamp),
+    ).resolves.toEqual({
+      fromVersion: 4,
+      toVersion: 5,
+      appliedMigrationIds: ['0005_check_in_safety'],
+    });
+    await expect(
+      database.getFirstAsync<{
+        capture_status: string;
+        safety_rule_ids_json: string | null;
+      }>(
+        'SELECT capture_status, safety_rule_ids_json FROM check_ins WHERE id = ?',
+        checkInId,
+      ),
+    ).resolves.toEqual({
+      capture_status: 'captured',
+      safety_rule_ids_json: null,
+    });
+    await expect(
+      database.getFirstAsync<{ count: number }>(
+        'SELECT COUNT(*) AS count FROM check_in_safety_responses',
       ),
     ).resolves.toEqual({ count: 0 });
   });

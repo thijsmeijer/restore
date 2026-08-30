@@ -5,9 +5,13 @@ import type {
   CheckInInput,
   CheckInRegionInput,
   CheckInTrainingInput,
-  SaveCheckInResult,
+  SubmitCheckInInput,
+  SubmitCheckInResult,
 } from '@/features/check-in/check-in';
-import { validateCheckInInput } from '@/features/check-in/check-in';
+import {
+  validateCheckInInput,
+  validateSubmitCheckInInput,
+} from '@/features/check-in/check-in';
 import type {
   CheckInEnvironment,
   CheckInMode,
@@ -17,6 +21,11 @@ import type {
   BodySide,
   TrainingType,
 } from '@/features/onboarding/profile-options';
+import {
+  checkInSafetySignalDefinitions,
+  evaluateCheckInSafety,
+  type CheckInSafetyState,
+} from '@/features/safety/check-in-safety';
 
 interface ProfileIdRow {
   readonly id: string;
@@ -35,6 +44,10 @@ interface CheckInRow {
   readonly completed_training_session_id: string | null;
   readonly note: string | null;
   readonly capture_status: CheckIn['captureStatus'];
+  readonly safety_result: CheckInSafetyState | null;
+  readonly safety_rules_version: string | null;
+  readonly safety_rule_ids_json: string | null;
+  readonly safety_reason_codes_json: string | null;
   readonly created_at: string;
 }
 
@@ -61,9 +74,14 @@ interface TrainingRow {
   readonly stress: number | null;
 }
 
+interface SafetyResponseRow {
+  readonly signal_id: string;
+  readonly reported: number;
+}
+
 export interface CheckInRepository {
   getLatest(): Promise<CheckIn | null>;
-  save(input: CheckInInput): Promise<SaveCheckInResult>;
+  submit(input: SubmitCheckInInput): Promise<SubmitCheckInResult>;
 }
 
 function localDate(date: Date): string {
@@ -75,6 +93,33 @@ function localDate(date: Date): string {
 
 function systemTimeZone(): string {
   return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+}
+
+function parseStoredStringArray(value: string | null, field: string): string[] {
+  if (value === null) return [];
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(value);
+  } catch {
+    throw new Error(`Stored check-in ${field} is not valid JSON.`);
+  }
+  if (
+    !Array.isArray(parsed) ||
+    parsed.some((entry) => typeof entry !== 'string')
+  ) {
+    throw new Error(`Stored check-in ${field} is not a string array.`);
+  }
+  return parsed;
+}
+
+function arraysEqual(
+  left: readonly string[],
+  right: readonly string[],
+): boolean {
+  return (
+    left.length === right.length &&
+    left.every((entry, index) => entry === right[index])
+  );
 }
 
 export class SQLiteCheckInRepository implements CheckInRepository {
@@ -94,8 +139,8 @@ export class SQLiteCheckInRepository implements CheckInRepository {
     return row === null ? null : this.hydrate(this.database, row);
   }
 
-  public async save(input: CheckInInput): Promise<SaveCheckInResult> {
-    const validation = validateCheckInInput(input);
+  public async submit(input: SubmitCheckInInput): Promise<SubmitCheckInResult> {
+    const validation = validateSubmitCheckInInput(input);
     if (!validation.ok) return validation;
 
     let savedCheckIn: CheckIn | null = null;
@@ -230,6 +275,42 @@ export class SQLiteCheckInRepository implements CheckInRepository {
         );
       }
 
+      const reportedSignals = new Set(validation.value.safety.reportedSignals);
+      for (const [
+        ruleOrder,
+        definition,
+      ] of checkInSafetySignalDefinitions.entries()) {
+        await transaction.runAsync(
+          `INSERT INTO check_in_safety_responses (
+            check_in_id, signal_id, reported, rule_order
+          ) VALUES (?, ?, ?, ?)`,
+          checkInId,
+          definition.signal,
+          reportedSignals.has(definition.signal) ? 1 : 0,
+          ruleOrder,
+        );
+      }
+
+      const submission = await transaction.runAsync(
+        `UPDATE check_ins SET
+          capture_status = 'submitted',
+          safety_result = ?,
+          safety_rules_version = ?,
+          safety_rule_ids_json = ?,
+          safety_reason_codes_json = ?,
+          updated_at = ?
+        WHERE id = ? AND capture_status = 'captured'`,
+        validation.safetyResult.state,
+        validation.safetyResult.rulesVersion,
+        JSON.stringify(validation.safetyResult.matchedRuleIds),
+        JSON.stringify(validation.safetyResult.reasonCodes),
+        timestamp,
+        checkInId,
+      );
+      if (submission.changes !== 1) {
+        throw new Error('Check-in could not transition to submitted.');
+      }
+
       const row = await transaction.getFirstAsync<CheckInRow>(
         'SELECT * FROM check_ins WHERE id = ?',
         checkInId,
@@ -244,7 +325,9 @@ export class SQLiteCheckInRepository implements CheckInRepository {
       };
     }
     if (savedCheckIn === null) {
-      throw new Error('Check-in save completed without a readable check-in.');
+      throw new Error(
+        'Check-in submission completed without a readable check-in.',
+      );
     }
 
     return { ok: true, checkIn: savedCheckIn };
@@ -267,6 +350,11 @@ export class SQLiteCheckInRepository implements CheckInRepository {
     const observations = await database.getAllAsync<RegionRow>(
       `SELECT region_slug, side, stiffness, soreness, discomfort
       FROM check_in_regions WHERE check_in_id = ? ORDER BY rowid`,
+      row.id,
+    );
+    const safetyResponses = await database.getAllAsync<SafetyResponseRow>(
+      `SELECT signal_id, reported FROM check_in_safety_responses
+      WHERE check_in_id = ? ORDER BY rule_order`,
       row.id,
     );
     const focusKeys = new Set(
@@ -335,9 +423,76 @@ export class SQLiteCheckInRepository implements CheckInRepository {
       );
     }
 
+    let safety: CheckIn['safety'] = null;
+    let safetyRuleIds: readonly string[] = [];
+    let safetyReasonCodes: readonly string[] = [];
+
+    if (row.capture_status === 'submitted') {
+      const hasCompleteResponseSet =
+        safetyResponses.length === checkInSafetySignalDefinitions.length &&
+        safetyResponses.every(
+          (response, index) =>
+            response.signal_id ===
+              checkInSafetySignalDefinitions[index]?.signal &&
+            (response.reported === 0 || response.reported === 1),
+        );
+      if (!hasCompleteResponseSet) {
+        throw new Error(
+          'Stored submitted check-in has an incomplete safety response set.',
+        );
+      }
+
+      safety = {
+        reportedSignals: checkInSafetySignalDefinitions
+          .filter((_, index) => safetyResponses[index]?.reported === 1)
+          .map((definition) => definition.signal),
+      };
+      const evaluation = evaluateCheckInSafety(
+        safety,
+        row.safety_rules_version ?? '',
+      );
+      if (!evaluation.ok) {
+        throw new Error('Stored check-in safety input failed validation.');
+      }
+
+      safetyRuleIds = parseStoredStringArray(
+        row.safety_rule_ids_json,
+        'safety rule IDs',
+      );
+      safetyReasonCodes = parseStoredStringArray(
+        row.safety_reason_codes_json,
+        'safety reason codes',
+      );
+      const storedResultMatches =
+        row.safety_result === evaluation.result.state &&
+        row.safety_rules_version === evaluation.result.rulesVersion &&
+        arraysEqual(safetyRuleIds, evaluation.result.matchedRuleIds) &&
+        arraysEqual(safetyReasonCodes, evaluation.result.reasonCodes);
+      if (!storedResultMatches) {
+        throw new Error(
+          'Stored check-in safety result does not match its structured input.',
+        );
+      }
+    } else if (
+      safetyResponses.length > 0 ||
+      row.safety_result !== null ||
+      row.safety_rules_version !== null ||
+      row.safety_rule_ids_json !== null ||
+      row.safety_reason_codes_json !== null
+    ) {
+      throw new Error(
+        'Stored captured check-in contains submitted safety data.',
+      );
+    }
+
     return {
       id: row.id,
       ...validation.value,
+      safety,
+      safetyResult: row.safety_result,
+      safetyRulesVersion: row.safety_rules_version,
+      safetyRuleIds,
+      safetyReasonCodes,
       observedAt: row.observed_at,
       localDate: row.local_date,
       timeZone: row.time_zone,

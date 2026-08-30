@@ -106,7 +106,7 @@ Existing slugs may be retired but never reassigned.
 - Optional planned and completed training references.
 - Optional local-only free-text note.
 - Safety result: `clear`, `gentle_only`, or `blocked`.
-- Safety rules version and ordered reason-code list.
+- Safety rules version, ordered matched-rule IDs, and ordered reason-code list.
 - Creation source and timestamps.
 
 `capture_status` distinguishes a durable `captured` form from a `submitted`
@@ -117,6 +117,20 @@ result, rules version, and ordered reason codes before setting `submitted`.
 
 A submitted check-in is immutable. Editing creates a replacement linked by
 `supersedes_check_in_id`; generated routines retain the original snapshot.
+
+### `check_in_safety_responses`
+
+- Check-in ID, stable structured signal ID, explicit reported boolean, and
+  deterministic rule order.
+- Stores a response for every rule in the submitted rules version, including
+  explicit false responses; selected signals alone are not treated as proof
+  that the complete gate was answered.
+- Global stop signs live here rather than on a body region because trauma,
+  dizziness, chest symptoms, breathing difficulty, and rapid worsening are not
+  reliably region-specific.
+- The classifier writes these responses while the check-in is `captured`, then
+  stores the versioned result and changes it to `submitted` in the same
+  transaction.
 
 ### `check_in_focus_regions`
 
@@ -129,11 +143,15 @@ A submitted check-in is immutable. Editing creates a replacement linked by
 
 - `id`, `check_in_id`, region slug, allowed side.
 - Nullable stiffness, soreness, and discomfort ratings from 0–10.
-- P0 structured safety flags required by the safety gate.
 - Unique `(check_in_id, region_slug, side)`.
 
-At least one rating or safety flag must be present. Missing data is never
-coerced to zero.
+At least one rating must be present. Missing data is never coerced to zero.
+
+Schema version 5 adds the safety-response table and matched-rule-ID column
+without rewriting owner data. Existing schema-4 check-ins remain `captured`,
+retain their exact snapshots, and are not eligible for generation; a new
+submitted check-in is required. Export/import is not implemented yet, so
+SAFE-001 adds no released export-format change.
 
 ## Versioned content
 

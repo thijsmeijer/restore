@@ -1,7 +1,8 @@
 import { initializeDatabaseConnection } from '@/db/initialize-database';
 import { SQLiteCheckInRepository } from '@/db/repositories/check-in-repository';
 import { SQLiteUserProfileRepository } from '@/db/repositories/user-profile-repository';
-import type { CheckInInput } from '@/features/check-in/check-in';
+import type { SubmitCheckInInput } from '@/features/check-in/check-in';
+import { checkInSafetyRulesVersion } from '@/features/safety/check-in-safety';
 
 import { NodeSQLiteDatabase } from './support/node-sqlite-database';
 
@@ -12,7 +13,7 @@ function sequentialIds(): () => string {
   return () => `${value++}`.padStart(26, '0');
 }
 
-function completeInput(): CheckInInput {
+function completeInput(): SubmitCheckInInput {
   return {
     mode: 'post_workout_reset',
     availableMinutes: 20,
@@ -40,6 +41,7 @@ function completeInput(): CheckInInput {
     ],
     training: { type: 'planche', status: 'completed', stress: 4 },
     note: 'Felt restricted after the session.',
+    safety: { reportedSignals: [] },
   };
 }
 
@@ -65,7 +67,7 @@ describe('check-in repository', () => {
 
   afterEach(() => database.close());
 
-  it('stores and reloads the complete captured snapshot transactionally', async () => {
+  it('classifies, submits, and reloads the complete snapshot transactionally', async () => {
     const repository = new SQLiteCheckInRepository(
       database,
       () => new Date(timestamp),
@@ -73,7 +75,7 @@ describe('check-in repository', () => {
       sequentialIds(),
     );
 
-    const result = await repository.save(completeInput());
+    const result = await repository.submit(completeInput());
 
     expect(result).toMatchObject({ ok: true });
     await expect(repository.getLatest()).resolves.toEqual({
@@ -82,15 +84,33 @@ describe('check-in repository', () => {
       observedAt: timestamp,
       localDate: '2026-08-30',
       timeZone: 'UTC',
-      captureStatus: 'captured',
+      safety: { reportedSignals: [] },
+      safetyResult: 'clear',
+      safetyRulesVersion: checkInSafetyRulesVersion,
+      safetyRuleIds: [],
+      safetyReasonCodes: [],
+      captureStatus: 'submitted',
       createdAt: timestamp,
     });
     await expect(
       database.getFirstAsync<{
+        capture_status: string;
         safety_result: string | null;
         safety_rules_version: string | null;
-      }>('SELECT safety_result, safety_rules_version FROM check_ins LIMIT 1'),
-    ).resolves.toEqual({ safety_result: null, safety_rules_version: null });
+        safety_rule_ids_json: string | null;
+        safety_reason_codes_json: string | null;
+      }>(
+        `SELECT capture_status, safety_result, safety_rules_version,
+          safety_rule_ids_json, safety_reason_codes_json
+        FROM check_ins LIMIT 1`,
+      ),
+    ).resolves.toEqual({
+      capture_status: 'submitted',
+      safety_result: 'clear',
+      safety_rules_version: checkInSafetyRulesVersion,
+      safety_rule_ids_json: '[]',
+      safety_reason_codes_json: '[]',
+    });
     await expect(
       database.getFirstAsync<{
         started_at: string | null;
@@ -101,7 +121,7 @@ describe('check-in repository', () => {
 
   it('keeps a minimal check-in durable across repository instances', async () => {
     const ids = sequentialIds();
-    const input: CheckInInput = {
+    const input: SubmitCheckInInput = {
       mode: 'daily_restore',
       availableMinutes: 5,
       readiness: null,
@@ -110,13 +130,14 @@ describe('check-in repository', () => {
       regions: [],
       training: null,
       note: null,
+      safety: { reportedSignals: [] },
     };
     await new SQLiteCheckInRepository(
       database,
       () => new Date(timestamp),
       () => 'Europe/Amsterdam',
       ids,
-    ).save(input);
+    ).submit(input);
 
     await expect(
       new SQLiteCheckInRepository(
@@ -127,14 +148,43 @@ describe('check-in repository', () => {
       ).getLatest(),
     ).resolves.toMatchObject({
       ...input,
-      captureStatus: 'captured',
+      captureStatus: 'submitted',
       timeZone: 'Europe/Amsterdam',
+    });
+  });
+
+  it('keeps a pre-safety captured check-in readable but incomplete', async () => {
+    const legacyCheckInId = '11111111111111111111111111';
+    await database.runAsync(
+      `INSERT INTO check_ins (
+        id, user_profile_id, observed_at, local_date, time_zone,
+        session_mode, available_minutes, readiness, environment,
+        capture_status, source, created_at, updated_at
+      ) VALUES (?, ?, ?, '2026-08-30', 'UTC', 'daily_restore', 15, NULL,
+        'home', 'captured', 'manual', ?, ?)`,
+      legacyCheckInId,
+      '00000000000000000000000000',
+      timestamp,
+      timestamp,
+      timestamp,
+    );
+
+    await expect(
+      new SQLiteCheckInRepository(database).getLatest(),
+    ).resolves.toMatchObject({
+      id: legacyCheckInId,
+      captureStatus: 'captured',
+      safety: null,
+      safetyResult: null,
+      safetyRulesVersion: null,
+      safetyRuleIds: [],
+      safetyReasonCodes: [],
     });
   });
 
   it('stores a focus area without inventing an observation or zero rating', async () => {
     const ids = sequentialIds();
-    const input: CheckInInput = {
+    const input: SubmitCheckInInput = {
       mode: 'targeted_area',
       availableMinutes: 10,
       readiness: 3,
@@ -151,6 +201,7 @@ describe('check-in repository', () => {
       ],
       training: null,
       note: null,
+      safety: { reportedSignals: [] },
     };
     const repository = new SQLiteCheckInRepository(
       database,
@@ -159,7 +210,7 @@ describe('check-in repository', () => {
       ids,
     );
 
-    await expect(repository.save(input)).resolves.toMatchObject({ ok: true });
+    await expect(repository.submit(input)).resolves.toMatchObject({ ok: true });
     await expect(repository.getLatest()).resolves.toMatchObject(input);
     await expect(
       database.getFirstAsync<{ count: number }>(
@@ -173,6 +224,47 @@ describe('check-in repository', () => {
     ).resolves.toEqual({ count: 0 });
   });
 
+  it('stores every structured response and the ordered blocked result', async () => {
+    const repository = new SQLiteCheckInRepository(
+      database,
+      () => new Date(timestamp),
+      () => 'UTC',
+      sequentialIds(),
+    );
+
+    const result = await repository.submit({
+      ...completeInput(),
+      safety: {
+        reportedSignals: [
+          'rapidly_worsening_problem',
+          'new_numbness_or_tingling',
+        ],
+      },
+    });
+
+    expect(result).toMatchObject({
+      ok: true,
+      checkIn: {
+        captureStatus: 'submitted',
+        safetyResult: 'blocked',
+        safetyRuleIds: [
+          'block_new_numbness_or_tingling_v1',
+          'block_rapidly_worsening_problem_v1',
+        ],
+        safetyReasonCodes: [
+          'reported_new_numbness_or_tingling',
+          'reported_rapidly_worsening_problem',
+        ],
+      },
+    });
+    await expect(
+      database.getFirstAsync<{ total: number; reported: number }>(
+        `SELECT COUNT(*) AS total, SUM(reported) AS reported
+        FROM check_in_safety_responses`,
+      ),
+    ).resolves.toEqual({ total: 8, reported: 2 });
+  });
+
   it('does not create a check-in without a local owner profile', async () => {
     const emptyDatabase = new NodeSQLiteDatabase();
     try {
@@ -184,7 +276,7 @@ describe('check-in repository', () => {
         sequentialIds(),
       );
 
-      await expect(repository.save(completeInput())).resolves.toEqual({
+      await expect(repository.submit(completeInput())).resolves.toEqual({
         ok: false,
         issues: [{ code: 'check_in_profile_missing', path: '$.profile' }],
       });
@@ -201,23 +293,35 @@ describe('check-in repository', () => {
       () => 'UTC',
       sequentialIds(),
     );
-    const result = await repository.save(completeInput());
+    const result = await repository.submit(completeInput());
     if (!result.ok) throw new Error('Expected the check-in to be saved.');
-
-    await database.runAsync(
-      `UPDATE check_ins SET
-        capture_status = 'submitted',
-        safety_result = 'clear',
-        safety_rules_version = 'test_rules',
-        safety_reason_codes_json = '[]'
-      WHERE id = ?`,
-      result.checkIn.id,
-    );
 
     await expect(
       database.runAsync(
         'UPDATE check_ins SET note = ? WHERE id = ?',
         'Changed later',
+        result.checkIn.id,
+      ),
+    ).rejects.toThrow('submitted_check_in_immutable');
+    await expect(
+      database.runAsync(
+        `UPDATE check_in_safety_responses SET reported = 1
+        WHERE check_in_id = ? AND signal_id = 'sudden_severe_pain'`,
+        result.checkIn.id,
+      ),
+    ).rejects.toThrow('submitted_check_in_immutable');
+    await expect(
+      database.runAsync(
+        `INSERT INTO check_in_safety_responses (
+          check_in_id, signal_id, reported, rule_order
+        ) VALUES (?, 'unknown_signal', 1, 99)`,
+        result.checkIn.id,
+      ),
+    ).rejects.toThrow('submitted_check_in_immutable');
+    await expect(
+      database.runAsync(
+        `DELETE FROM check_in_safety_responses
+        WHERE check_in_id = ? AND signal_id = 'sudden_severe_pain'`,
         result.checkIn.id,
       ),
     ).rejects.toThrow('submitted_check_in_immutable');
@@ -284,6 +388,11 @@ describe('check-in repository', () => {
         'SELECT COUNT(*) AS count FROM check_in_focus_regions',
       ),
     ).resolves.toEqual({ count: 0 });
+    await expect(
+      database.getFirstAsync<{ count: number }>(
+        'SELECT COUNT(*) AS count FROM check_in_safety_responses',
+      ),
+    ).resolves.toEqual({ count: 0 });
   });
 
   it('rolls back every fact when a child snapshot write fails', async () => {
@@ -294,7 +403,7 @@ describe('check-in repository', () => {
       () => '99999999999999999999999999',
     );
 
-    await expect(repository.save(completeInput())).rejects.toThrow();
+    await expect(repository.submit(completeInput())).rejects.toThrow();
     await expect(
       database.getFirstAsync<{ count: number }>(
         'SELECT COUNT(*) AS count FROM check_ins',
