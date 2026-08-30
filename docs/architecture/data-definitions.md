@@ -118,6 +118,13 @@ result, rules version, and ordered reason codes before setting `submitted`.
 A submitted check-in is immutable. Editing creates a replacement linked by
 `supersedes_check_in_id`; generated routines retain the original snapshot.
 
+### `check_in_focus_regions`
+
+- `id`, `check_in_id`, selected region slug, and allowed side.
+- Records that the user wants a routine to focus on an area without requiring
+  a symptom or severity rating.
+- Unique `(check_in_id, region_slug, side)`.
+
 ### `check_in_regions`
 
 - `id`, `check_in_id`, region slug, allowed side.

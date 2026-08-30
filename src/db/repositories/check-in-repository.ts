@@ -50,6 +50,11 @@ interface RegionRow {
   readonly discomfort: number | null;
 }
 
+interface FocusRegionRow {
+  readonly region_slug: BodyRegionSlug;
+  readonly side: BodySide;
+}
+
 interface TrainingRow {
   readonly training_type: TrainingType;
   readonly status: CheckInTrainingInput['status'];
@@ -196,6 +201,22 @@ export class SQLiteCheckInRepository implements CheckInRepository {
       }
       for (const region of validation.value.regions) {
         await transaction.runAsync(
+          `INSERT INTO check_in_focus_regions (
+            id, check_in_id, region_slug, side
+          ) VALUES (?, ?, ?, ?)`,
+          this.idFactory(),
+          checkInId,
+          region.regionSlug,
+          region.side,
+        );
+        if (
+          region.stiffness === null &&
+          region.soreness === null &&
+          region.discomfort === null
+        ) {
+          continue;
+        }
+        await transaction.runAsync(
           `INSERT INTO check_in_regions (
             id, check_in_id, region_slug, side, stiffness, soreness, discomfort
           ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
@@ -238,11 +259,44 @@ export class SQLiteCheckInRepository implements CheckInRepository {
       WHERE check_in_id = ? ORDER BY rowid`,
       row.id,
     );
-    const regions = await database.getAllAsync<RegionRow>(
+    const focusRegions = await database.getAllAsync<FocusRegionRow>(
+      `SELECT region_slug, side FROM check_in_focus_regions
+      WHERE check_in_id = ? ORDER BY rowid`,
+      row.id,
+    );
+    const observations = await database.getAllAsync<RegionRow>(
       `SELECT region_slug, side, stiffness, soreness, discomfort
       FROM check_in_regions WHERE check_in_id = ? ORDER BY rowid`,
       row.id,
     );
+    const focusKeys = new Set(
+      focusRegions.map((entry) => `${entry.region_slug}:${entry.side}`),
+    );
+    const regions: readonly CheckInRegionInput[] = [
+      ...focusRegions.map((focus): CheckInRegionInput => {
+        const observation = observations.find(
+          (entry) =>
+            entry.region_slug === focus.region_slug &&
+            entry.side === focus.side,
+        );
+        return {
+          regionSlug: focus.region_slug,
+          side: focus.side,
+          stiffness: observation?.stiffness ?? null,
+          soreness: observation?.soreness ?? null,
+          discomfort: observation?.discomfort ?? null,
+        };
+      }),
+      ...observations
+        .filter((entry) => !focusKeys.has(`${entry.region_slug}:${entry.side}`))
+        .map((entry): CheckInRegionInput => ({
+          regionSlug: entry.region_slug,
+          side: entry.side,
+          stiffness: entry.stiffness,
+          soreness: entry.soreness,
+          discomfort: entry.discomfort,
+        })),
+    ];
     const trainingSessionId =
       row.planned_training_session_id ?? row.completed_training_session_id;
     const training =
@@ -263,13 +317,7 @@ export class SQLiteCheckInRepository implements CheckInRepository {
       readiness: row.readiness,
       environment: row.environment,
       equipmentIds: equipment.map((entry) => entry.equipment_id),
-      regions: regions.map((entry): CheckInRegionInput => ({
-        regionSlug: entry.region_slug,
-        side: entry.side,
-        stiffness: entry.stiffness,
-        soreness: entry.soreness,
-        discomfort: entry.discomfort,
-      })),
+      regions,
       training:
         training === null
           ? null

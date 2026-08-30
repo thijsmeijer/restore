@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 
 import { bodyMapTargets } from '@/features/check-in/accessible-body-map';
@@ -36,6 +38,11 @@ function savedCheckIn(input: CheckInInput): CheckIn {
     captureStatus: 'captured',
     createdAt: '2026-08-30T08:15:00.000Z',
   };
+}
+
+function BodySelectorHarness() {
+  const [value, setValue] = useState<CheckInInput['regions']>([]);
+  return <BodyObservationSelector compact onChange={setValue} value={value} />;
 }
 
 describe('check-in form', () => {
@@ -129,35 +136,56 @@ describe('check-in form', () => {
     expect(onComplete).toHaveBeenCalledTimes(1);
   });
 
-  it('adds an explicit zero body rating from the body map', async () => {
+  it('selects a mapped focus area immediately without requiring a rating', async () => {
     const onChange = jest.fn();
     const screen = await render(
       <BodyObservationSelector onChange={onChange} value={[]} />,
     );
 
     await fireEvent.press(
-      screen.getByRole('button', { name: 'Add a focus area' }),
+      screen.getByRole('button', { name: 'Choose focus areas' }),
     );
     await fireEvent.press(
       screen.getByRole('button', { name: 'Right elbow, front' }),
     );
-    expect(
-      screen.getByRole('radio', { name: 'Right' }).props.accessibilityState,
-    ).toEqual({ disabled: false, selected: true });
-    await fireEvent.press(
-      screen.getByRole('radio', { name: 'Stiffness 0 of 10' }),
-    );
-    await fireEvent.press(screen.getByRole('button', { name: 'Add area' }));
+    expect(screen.queryByText('Stiffness')).toBeNull();
 
     expect(onChange).toHaveBeenCalledWith([
       {
         regionSlug: 'elbow',
         side: 'right',
-        stiffness: 0,
+        stiffness: null,
         soreness: null,
         discomfort: null,
       },
     ]);
+  });
+
+  it('combines opposite map taps into both sides and toggles them off', async () => {
+    const screen = await render(<BodySelectorHarness />);
+
+    await fireEvent.press(
+      screen.getByRole('button', { name: 'Choose focus areas' }),
+    );
+    await fireEvent.press(
+      screen.getByRole('button', { name: 'Right elbow, front' }),
+    );
+    screen.getByRole('button', { name: 'Elbow, Right' });
+
+    await fireEvent.press(
+      screen.getByRole('button', { name: 'Left elbow, front' }),
+    );
+    screen.getByRole('button', { name: 'Elbow, Both sides' });
+
+    await fireEvent.press(
+      screen.getByRole('button', { name: 'Right elbow, front' }),
+    );
+    screen.getByRole('button', { name: 'Elbow, Left' });
+
+    await fireEvent.press(
+      screen.getByRole('button', { name: 'Left elbow, front' }),
+    );
+    expect(screen.queryByRole('button', { name: 'Elbow, Left' })).toBeNull();
   });
 
   it('supports crowded map areas, back view, and the full text list', async () => {
@@ -184,7 +212,7 @@ describe('check-in form', () => {
     );
 
     await fireEvent.press(
-      screen.getByRole('button', { name: 'Add another area' }),
+      screen.getByRole('button', { name: 'Review focus areas' }),
     );
     expect(
       screen.getByRole('button', {
