@@ -14,7 +14,7 @@ export default function LoadingScreen() {
     return (
       <Screen testID="profile-load-error-screen">
         <ErrorState
-          description="Your local information was not changed."
+          description="Your saved information was not changed."
           onRetry={() => void profileState.reload()}
           title="Could not open your profile"
         />
@@ -26,7 +26,7 @@ export default function LoadingScreen() {
     <Screen testID="profile-loading-screen">
       <View accessibilityLiveRegion="polite" style={styles.content}>
         <ActivityIndicator
-          accessibilityLabel="Opening your local profile"
+          accessibilityLabel="Opening Restore"
           color={colors.accent}
           size="large"
         />

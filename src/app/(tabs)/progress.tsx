@@ -3,9 +3,10 @@ import { PlaceholderScreen } from '@/components/placeholder-screen';
 export default function ProgressScreen() {
   return (
     <PlaceholderScreen
-      eyebrow="Phase 1"
+      eyebrow="Progress"
       title="Progress"
-      description="Completed sessions and body-region trends will appear here once the core loop produces historical records."
+      cardTitle="Your history starts here"
+      description="Completed sessions and movement patterns will appear here over time."
     />
   );
 }

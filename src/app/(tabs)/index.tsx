@@ -3,9 +3,10 @@ import { PlaceholderScreen } from '@/components/placeholder-screen';
 export default function TodayScreen() {
   return (
     <PlaceholderScreen
-      eyebrow="Setup complete"
+      eyebrow="Ready"
       title="Today"
-      description="Your profile is stored locally on this iPhone. The daily check-in and recommended routine will be added through their dedicated milestones."
+      cardTitle="Your profile is ready"
+      description="This is your starting point for a routine shaped around your goals, available time, and how your body feels today."
     />
   );
 }

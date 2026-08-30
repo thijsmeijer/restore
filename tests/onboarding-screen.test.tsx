@@ -1,4 +1,4 @@
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 
 import { OnboardingProfileScreen } from '@/features/onboarding/onboarding-profile-screen';
 import type {
@@ -67,8 +67,8 @@ describe('onboarding profile screen', () => {
       <OnboardingProfileScreen initialProfile={null} onSave={onSave} />,
     );
 
-    screen.getByRole('header', { name: 'Welcome to Restore' });
-    screen.getByText(/stays in Restore’s local database on this iPhone/i);
+    screen.getByRole('header', { name: 'Make Restore yours' });
+    screen.getByText(/stay on this iPhone/i);
     await fireEvent.press(screen.getByRole('button', { name: 'Get started' }));
     await skipToSafety(screen, 5);
 
@@ -76,9 +76,9 @@ describe('onboarding profile screen', () => {
       screen.getByRole('button', { name: 'Finish setup' }).props
         .accessibilityState,
     ).toEqual({ disabled: true });
-    screen.getByText(/will not request notification permission/i);
+    screen.getByText(/only ask for notification access/i);
     screen.getByText(/new numbness or tingling/i);
-    screen.getByText(/acknowledging this message never bypasses/i);
+    screen.getByText(/still check your current symptoms/i);
 
     await acknowledgeAndSave(screen);
 
@@ -101,13 +101,23 @@ describe('onboarding profile screen', () => {
     );
     await fireEvent.press(screen.getByRole('button', { name: 'Get started' }));
     await fireEvent.press(
-      screen.getByRole('checkbox', { name: 'Move better' }),
+      screen.getByRole('checkbox', { name: 'Move with more ease' }),
     );
     await fireEvent.press(
-      screen.getByRole('checkbox', { name: 'Reduce stiffness' }),
+      screen.getByRole('checkbox', { name: 'Ease everyday stiffness' }),
     );
-    await fireEvent.press(
-      screen.getByRole('button', { name: 'Move Reduce stiffness earlier' }),
+    const dragHandle = screen.getByRole('adjustable', {
+      name: 'Ease everyday stiffness, priority 2 of 2',
+    });
+    await act(() => {
+      dragHandle.props.onAccessibilityAction({
+        nativeEvent: { actionName: 'decrement' },
+      });
+    });
+    await waitFor(() =>
+      screen.getByRole('adjustable', {
+        name: 'Ease everyday stiffness, priority 1 of 2',
+      }),
     );
     await fireEvent.press(screen.getByRole('button', { name: 'Continue' }));
     await skipToSafety(screen, 4);
@@ -133,6 +143,7 @@ describe('onboarding profile screen', () => {
     );
     await fireEvent.press(screen.getByRole('checkbox', { name: 'Neck' }));
     await fireEvent.press(screen.getByRole('radio', { name: 'Left' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Add area' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Continue' }));
     await skipToSafety(screen, 3);
     await acknowledgeAndSave(screen);
@@ -141,6 +152,30 @@ describe('onboarding profile screen', () => {
       expect(onSave).toHaveBeenCalledWith(
         expect.objectContaining({
           bodyBaseline: [{ regionSlug: 'neck', side: 'left' }],
+        }),
+      ),
+    );
+  });
+
+  it('uses stable tap targets for routine lengths and preserves their ordering', async () => {
+    const onSave = successfulSave();
+    const screen = await render(
+      <OnboardingProfileScreen initialProfile={null} onSave={onSave} />,
+    );
+    await fireEvent.press(screen.getByRole('button', { name: 'Get started' }));
+    await skipToSafety(screen, 4);
+
+    await fireEvent.press(screen.getByRole('radio', { name: 'Quick: 15 min' }));
+    await fireEvent.press(
+      screen.getByRole('radio', { name: 'Standard: 10 min' }),
+    );
+    await fireEvent.press(screen.getByRole('button', { name: 'Continue' }));
+    await acknowledgeAndSave(screen);
+
+    await waitFor(() =>
+      expect(onSave).toHaveBeenCalledWith(
+        expect.objectContaining({
+          preferredDurations: { quick: 10, normal: 10, deep: 30 },
         }),
       ),
     );
@@ -170,7 +205,7 @@ describe('onboarding profile screen', () => {
       screen.getByRole('button', { name: 'Review profile' }),
     );
     expect(
-      screen.getByRole('checkbox', { name: 'Move better' }).props
+      screen.getByRole('checkbox', { name: 'Move with more ease' }).props
         .accessibilityState,
     ).toEqual({ checked: true });
 

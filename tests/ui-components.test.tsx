@@ -181,7 +181,7 @@ describe('UI component foundation', () => {
         </AppErrorBoundary>,
       );
 
-      screen.getByRole('alert', { name: 'Restore paused' });
+      screen.getByRole('alert', { name: 'Something went wrong' });
       screen.getByRole('button', { name: 'Try again' });
     } finally {
       consoleError.mockRestore();

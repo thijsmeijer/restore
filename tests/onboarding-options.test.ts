@@ -4,6 +4,8 @@ import path from 'node:path';
 import {
   bodyRegionOptions,
   equipmentOptions,
+  trainingTypeGroups,
+  trainingTypeOptions,
 } from '@/features/onboarding/profile-options';
 import { bodyRegionSchema, equipmentSchema } from '@/content/schemas';
 
@@ -44,5 +46,11 @@ describe('onboarding option catalogs', () => {
         .filter((entry) => entry.active)
         .map(({ id, slug }) => ({ id, slug })),
     ).toEqual(equipmentOptions.map(({ id, slug }) => ({ id, slug })));
+  });
+
+  it('places every supported training type in one understandable group', () => {
+    expect(trainingTypeGroups.flatMap((group) => group.values).sort()).toEqual(
+      trainingTypeOptions.map((option) => option.value).sort(),
+    );
   });
 });

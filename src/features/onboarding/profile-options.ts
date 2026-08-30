@@ -1,13 +1,13 @@
 export const goalOptions = [
-  { value: 'move_better', label: 'Move better' },
-  { value: 'reduce_stiffness', label: 'Reduce stiffness' },
+  { value: 'move_better', label: 'Move with more ease' },
+  { value: 'reduce_stiffness', label: 'Ease everyday stiffness' },
   {
     value: 'prepare_for_calisthenics',
-    label: 'Prepare for calisthenics',
+    label: 'Support calisthenics training',
   },
-  { value: 'improve_posture', label: 'Practice posture' },
-  { value: 'wind_down', label: 'Wind down' },
-  { value: 'maintain_joints', label: 'Maintain joint movement' },
+  { value: 'improve_posture', label: 'Improve posture and control' },
+  { value: 'wind_down', label: 'Wind down and relax' },
+  { value: 'maintain_joints', label: 'Maintain joint mobility' },
 ] as const;
 
 export type GoalSlug = (typeof goalOptions)[number]['value'];
@@ -19,13 +19,28 @@ export const trainingTypeOptions = [
   { value: 'planche', label: 'Planche' },
   { value: 'front_lever', label: 'Front lever' },
   { value: 'handstand', label: 'Handstand' },
-  { value: 'mixed_skills', label: 'Mixed skills' },
+  { value: 'mixed_skills', label: 'Mixed calisthenics skills' },
   { value: 'weighted_strength', label: 'Weighted strength' },
   { value: 'running', label: 'Running' },
-  { value: 'rest', label: 'Rest days' },
+  { value: 'rest', label: 'Rest or recovery days' },
 ] as const;
 
 export type TrainingType = (typeof trainingTypeOptions)[number]['value'];
+
+export const trainingTypeGroups: readonly {
+  label: string;
+  values: readonly TrainingType[];
+}[] = [
+  {
+    label: 'Strength days',
+    values: ['push', 'pull', 'legs', 'weighted_strength'],
+  },
+  {
+    label: 'Skill practice',
+    values: ['planche', 'front_lever', 'handstand', 'mixed_skills'],
+  },
+  { label: 'Other days', values: ['running', 'rest'] },
+];
 
 export const equipmentOptions = [
   {
@@ -90,7 +105,7 @@ export const bodyRegionOptions = [
   { slug: 'neck', label: 'Neck', laterality: 'hybrid', surface: 'both' },
   {
     slug: 'upper_trapezius',
-    label: 'Upper trapezius',
+    label: 'Upper shoulders',
     laterality: 'paired',
     surface: 'back',
   },
@@ -124,7 +139,12 @@ export const bodyRegionOptions = [
     laterality: 'paired',
     surface: 'front',
   },
-  { slug: 'lats', label: 'Lats', laterality: 'paired', surface: 'back' },
+  {
+    slug: 'lats',
+    label: 'Side and upper back',
+    laterality: 'paired',
+    surface: 'back',
+  },
   { slug: 'elbow', label: 'Elbow', laterality: 'paired', surface: 'both' },
   { slug: 'forearm', label: 'Forearm', laterality: 'paired', surface: 'both' },
   { slug: 'wrist', label: 'Wrist', laterality: 'paired', surface: 'detail' },
@@ -136,7 +156,7 @@ export const bodyRegionOptions = [
   },
   {
     slug: 'thoracic_spine',
-    label: 'Thoracic spine',
+    label: 'Mid-back',
     laterality: 'central',
     surface: 'back',
   },
@@ -148,7 +168,7 @@ export const bodyRegionOptions = [
   },
   {
     slug: 'pelvis_si_area',
-    label: 'Pelvic and SI-area region',
+    label: 'Pelvis and sacrum',
     laterality: 'hybrid',
     surface: 'back',
   },
@@ -166,26 +186,26 @@ export const bodyRegionOptions = [
   },
   {
     slug: 'hip_deep_rotation',
-    label: 'Deep hip rotation area',
+    label: 'Deep hip',
     laterality: 'paired',
     surface: 'both',
   },
   { slug: 'glutes', label: 'Glutes', laterality: 'paired', surface: 'back' },
   {
     slug: 'adductors_groin',
-    label: 'Adductors and groin',
+    label: 'Inner thigh and groin',
     laterality: 'paired',
     surface: 'front',
   },
   {
     slug: 'hamstrings',
-    label: 'Hamstrings',
+    label: 'Back thigh',
     laterality: 'paired',
     surface: 'back',
   },
   {
     slug: 'quadriceps',
-    label: 'Quadriceps',
+    label: 'Front thigh',
     laterality: 'paired',
     surface: 'front',
   },

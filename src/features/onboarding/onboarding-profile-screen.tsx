@@ -12,30 +12,25 @@ import { Badge } from '@/components/badge';
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { Screen } from '@/components/screen';
-import { SegmentedControl } from '@/components/segmented-control';
-import { Slider } from '@/components/slider';
 import { radius, spacing, typography } from '@/design-system/tokens';
 import { useRestoreTheme } from '@/design-system/use-theme';
+import { BodyBaselineSelector } from '@/features/onboarding/body-baseline-selector';
+import { DraggableGoalList } from '@/features/onboarding/draggable-goal-list';
+import { DurationSelector } from '@/features/onboarding/duration-selector';
 import type {
   OnboardingProfileInput,
   SaveProfileResult,
   UserProfile,
 } from '@/features/onboarding/profile';
 import {
-  bodyRegionOptions,
   currentSafetyRulesVersion,
   equipmentOptions,
   goalOptions,
+  trainingTypeGroups,
   trainingTypeOptions,
 } from '@/features/onboarding/profile-options';
 
 const stepCount = 7;
-const bodySurfaceGroups = [
-  { surface: 'front', label: 'Front' },
-  { surface: 'back', label: 'Back' },
-  { surface: 'both', label: 'Front and back' },
-  { surface: 'detail', label: 'Hands and feet' },
-] as const;
 
 type OnboardingProfileScreenProps = {
   initialProfile: UserProfile | null;
@@ -77,53 +72,6 @@ function Choice({ label, selected, onPress, accessibilityHint }: ChoiceProps) {
   );
 }
 
-type ReorderControlsProps = {
-  label: string;
-  index: number;
-  count: number;
-  onMove: (direction: -1 | 1) => void;
-};
-
-function ReorderControls({
-  label,
-  index,
-  count,
-  onMove,
-}: ReorderControlsProps) {
-  const { colors } = useRestoreTheme();
-
-  const control = (direction: -1 | 1, text: string, disabled: boolean) => (
-    <Pressable
-      accessibilityLabel={`Move ${label} ${text.toLowerCase()}`}
-      accessibilityRole="button"
-      accessibilityState={{ disabled }}
-      disabled={disabled}
-      onPress={() => onMove(direction)}
-      style={({ pressed }) => [
-        styles.reorderButton,
-        {
-          borderColor: colors.border,
-          opacity: disabled ? 0.45 : pressed ? 0.72 : 1,
-        },
-      ]}
-    >
-      <Text style={[styles.reorderLabel, { color: colors.text }]}>{text}</Text>
-    </Pressable>
-  );
-
-  return (
-    <View style={styles.reorderItem}>
-      <Text style={[styles.orderText, { color: colors.text }]}>
-        {index + 1}. {label}
-      </Text>
-      <View style={styles.reorderRow}>
-        {control(-1, 'Earlier', index === 0)}
-        {control(1, 'Later', index === count - 1)}
-      </View>
-    </View>
-  );
-}
-
 function initialInput(profile: UserProfile | null): OnboardingProfileInput {
   if (profile !== null) {
     return {
@@ -154,23 +102,6 @@ function toggleOrdered<Value extends string>(
   return values.includes(value)
     ? values.filter((entry) => entry !== value)
     : [...values, value];
-}
-
-function move<Value>(
-  values: readonly Value[],
-  index: number,
-  direction: -1 | 1,
-) {
-  const nextIndex = index + direction;
-  if (nextIndex < 0 || nextIndex >= values.length) return [...values];
-
-  const result = [...values];
-  const current = result[index];
-  const target = result[nextIndex];
-  if (current === undefined || target === undefined) return result;
-  result[index] = target;
-  result[nextIndex] = current;
-  return result;
 }
 
 export function OnboardingProfileScreen({
@@ -237,13 +168,13 @@ export function OnboardingProfileScreen({
   };
 
   const title = [
-    editing ? 'Review your profile' : 'Welcome to Restore',
-    'What should Restore support?',
-    'Any commonly sensitive areas?',
-    'What equipment is usually available?',
-    'What does your training usually include?',
-    'Choose useful routine lengths',
-    'Understand the safety boundary',
+    editing ? 'Review your profile' : 'Make Restore yours',
+    'What would you like to work on?',
+    'Where would you like extra attention?',
+    'What do you have available?',
+    'How does movement fit your week?',
+    'How much time feels useful?',
+    'Before you begin',
   ][step];
 
   return (
@@ -266,12 +197,12 @@ export function OnboardingProfileScreen({
         <>
           <Card>
             <Text style={[styles.cardTitle, { color: colors.text }]}>
-              A short setup for relevant routines
+              A few choices, shaped around you
             </Text>
             <Text style={[styles.body, { color: colors.textMuted }]}>
-              Everything stays in Restore’s local database on this iPhone.
-              Goals, body areas, equipment, training, and preferred times are
-              optional and can be changed later.
+              Tell Restore what matters to you and what you usually have
+              available. Your goals and preferences are optional, stay on this
+              iPhone, and can be changed later.
             </Text>
           </Card>
           <Button
@@ -288,7 +219,7 @@ export function OnboardingProfileScreen({
       {step === 1 ? (
         <>
           <Text style={[styles.body, { color: colors.textMuted }]}>
-            Select any goals. Their order becomes their priority order.
+            Choose as many as you like. Your first goal gets the most emphasis.
           </Text>
           <View style={styles.choiceList}>
             {goalOptions.map((option) => (
@@ -307,122 +238,36 @@ export function OnboardingProfileScreen({
           {input.goalSlugs.length > 0 ? (
             <Card>
               <Text style={[styles.cardTitle, { color: colors.text }]}>
-                Priority order
+                Your priorities
               </Text>
-              {input.goalSlugs.map((slug, index) => (
-                <ReorderControls
-                  count={input.goalSlugs.length}
-                  index={index}
-                  key={slug}
-                  label={
-                    goalOptions.find((option) => option.value === slug)
-                      ?.label ?? slug
-                  }
-                  onMove={(direction) =>
-                    update({
-                      goalSlugs: move(input.goalSlugs, index, direction),
-                    })
-                  }
-                />
-              ))}
+              <Text style={[styles.note, { color: colors.textMuted }]}>
+                Drag the handle to change the order.
+              </Text>
+              <DraggableGoalList
+                goals={input.goalSlugs}
+                labelForGoal={(slug) =>
+                  goalOptions.find((option) => option.value === slug)?.label ??
+                  slug
+                }
+                onChange={(goalSlugs) => update({ goalSlugs })}
+              />
             </Card>
           ) : null}
         </>
       ) : null}
 
       {step === 2 ? (
-        <>
-          <Text style={[styles.body, { color: colors.textMuted }]}>
-            This text list is the accessible baseline selector. The interactive
-            front/back map arrives in MAP-001. Selecting an area does not imply
-            a diagnosis.
-          </Text>
-          <View style={styles.choiceList}>
-            {bodySurfaceGroups.map((group) => (
-              <View key={group.surface} style={styles.regionGroup}>
-                <Text
-                  accessibilityRole="header"
-                  style={[styles.sectionTitle, { color: colors.text }]}
-                >
-                  {group.label}
-                </Text>
-                {bodyRegionOptions
-                  .filter((option) => option.surface === group.surface)
-                  .map((option) => {
-                    const selected = input.bodyBaseline.find(
-                      (entry) => entry.regionSlug === option.slug,
-                    );
-                    return (
-                      <View key={option.slug}>
-                        <Choice
-                          accessibilityHint="Adds or removes this area from your optional baseline."
-                          label={option.label}
-                          onPress={() => {
-                            update({
-                              bodyBaseline: selected
-                                ? input.bodyBaseline.filter(
-                                    (entry) => entry.regionSlug !== option.slug,
-                                  )
-                                : [
-                                    ...input.bodyBaseline,
-                                    {
-                                      regionSlug: option.slug,
-                                      side:
-                                        option.laterality === 'central'
-                                          ? 'central'
-                                          : 'bilateral',
-                                    },
-                                  ],
-                            });
-                          }}
-                          selected={selected !== undefined}
-                        />
-                        {selected && option.laterality !== 'central' ? (
-                          <View style={styles.sideControl}>
-                            <SegmentedControl
-                              label={`${option.label} side`}
-                              onChange={(side) =>
-                                update({
-                                  bodyBaseline: input.bodyBaseline.map(
-                                    (entry) =>
-                                      entry.regionSlug === option.slug
-                                        ? { ...entry, side }
-                                        : entry,
-                                  ),
-                                })
-                              }
-                              options={
-                                option.laterality === 'hybrid'
-                                  ? [
-                                      { label: 'Center', value: 'central' },
-                                      { label: 'Left', value: 'left' },
-                                      { label: 'Right', value: 'right' },
-                                      { label: 'Both', value: 'bilateral' },
-                                    ]
-                                  : [
-                                      { label: 'Left', value: 'left' },
-                                      { label: 'Right', value: 'right' },
-                                      { label: 'Both', value: 'bilateral' },
-                                    ]
-                              }
-                              value={selected.side}
-                            />
-                          </View>
-                        ) : null}
-                      </View>
-                    );
-                  })}
-              </View>
-            ))}
-          </View>
-        </>
+        <BodyBaselineSelector
+          onChange={(bodyBaseline) => update({ bodyBaseline })}
+          value={input.bodyBaseline}
+        />
       ) : null}
 
       {step === 3 ? (
         <>
           <Text style={[styles.body, { color: colors.textMuted }]}>
-            Select what is normally available at home. A routine may only use
-            equipment available in its current context.
+            Select what you can usually use at home. Restore will keep these
+            choices in mind when preparing a routine.
           </Text>
           <View style={styles.choiceList}>
             {equipmentOptions.map((option) => (
@@ -444,24 +289,42 @@ export function OnboardingProfileScreen({
       {step === 4 ? (
         <>
           <Text style={[styles.body, { color: colors.textMuted }]}>
-            Choose the training types that commonly appear in your week. Restore
-            does not create strength programming.
+            Choose anything that regularly appears in your week. This helps
+            Restore complement what you already do.
           </Text>
-          <View style={styles.choiceList}>
-            {trainingTypeOptions.map((option) => (
-              <Choice
-                key={option.value}
-                label={option.label}
-                onPress={() =>
-                  update({
-                    trainingTypes: toggleOrdered(
-                      input.trainingTypes,
-                      option.value,
-                    ),
-                  })
-                }
-                selected={input.trainingTypes.includes(option.value)}
-              />
+          <View style={styles.trainingGroups}>
+            {trainingTypeGroups.map((group) => (
+              <View key={group.label} style={styles.trainingGroup}>
+                <Text
+                  accessibilityRole="header"
+                  style={[styles.sectionTitle, { color: colors.text }]}
+                >
+                  {group.label}
+                </Text>
+                <View style={styles.choiceList}>
+                  {group.values.map((value) => {
+                    const option = trainingTypeOptions.find(
+                      (entry) => entry.value === value,
+                    );
+                    if (option === undefined) return null;
+                    return (
+                      <Choice
+                        key={option.value}
+                        label={option.label}
+                        onPress={() =>
+                          update({
+                            trainingTypes: toggleOrdered(
+                              input.trainingTypes,
+                              option.value,
+                            ),
+                          })
+                        }
+                        selected={input.trainingTypes.includes(option.value)}
+                      />
+                    );
+                  })}
+                </View>
+              </View>
             ))}
           </View>
         </>
@@ -470,59 +333,12 @@ export function OnboardingProfileScreen({
       {step === 5 ? (
         <Card>
           <Text style={[styles.body, { color: colors.textMuted }]}>
-            Suggested values are ready to use. Each duration stays between 2 and
-            90 minutes.
+            Pick the lengths you are most likely to use. Practical defaults are
+            already selected, and every option can be left open.
           </Text>
-          <Slider
-            formatValue={(value) => `${value} minutes`}
-            label="Quick routine"
-            max={30}
-            min={2}
-            onChange={(quick) =>
-              update({
-                preferredDurations: {
-                  quick,
-                  normal: Math.max(
-                    input.preferredDurations.normal ?? 15,
-                    quick,
-                  ),
-                  deep: Math.max(input.preferredDurations.deep ?? 30, quick),
-                },
-              })
-            }
-            value={input.preferredDurations.quick ?? 5}
-          />
-          <Slider
-            formatValue={(value) => `${value} minutes`}
-            label="Normal routine"
-            max={60}
-            min={2}
-            onChange={(normal) =>
-              update({
-                preferredDurations: {
-                  quick: Math.min(input.preferredDurations.quick ?? 5, normal),
-                  normal,
-                  deep: Math.max(input.preferredDurations.deep ?? 30, normal),
-                },
-              })
-            }
-            value={input.preferredDurations.normal ?? 15}
-          />
-          <Slider
-            formatValue={(value) => `${value} minutes`}
-            label="Deep routine"
-            max={90}
-            min={2}
-            onChange={(deep) =>
-              update({
-                preferredDurations: {
-                  quick: Math.min(input.preferredDurations.quick ?? 5, deep),
-                  normal: Math.min(input.preferredDurations.normal ?? 15, deep),
-                  deep,
-                },
-              })
-            }
-            value={input.preferredDurations.deep ?? 30}
+          <DurationSelector
+            onChange={(preferredDurations) => update({ preferredDurations })}
+            value={input.preferredDurations}
           />
         </Card>
       ) : null}
@@ -530,31 +346,30 @@ export function OnboardingProfileScreen({
       {step === 6 ? (
         <>
           <Card>
-            <Badge label="Engineering baseline" />
+            <Badge label="Please read" tone="accent" />
             <Text style={[styles.cardTitle, { color: colors.text }]}>
               Restore has limits
             </Text>
             <Text style={[styles.body, { color: colors.text }]}>
-              Restore supports self-guided mobility and recovery. It does not
-              diagnose a condition, decide that movement is medically safe, or
+              Restore offers self-guided mobility and recovery. It cannot tell
+              whether a symptom or movement is medically safe, and it does not
               replace professional or urgent care.
             </Text>
             <Text style={[styles.body, { color: colors.text }]}>
-              Do not start or continue a Restore routine when you report sudden
-              severe pain, recent major trauma, new numbness or tingling,
-              unexplained weakness or loss of control, radiating symptoms,
-              significant swelling or visible deformity, dizziness, fainting,
-              chest or breathing symptoms, or a rapidly worsening problem. The
-              check-in will block routine generation for these reports.
+              Do not begin or continue a routine if you have sudden severe pain,
+              recent major trauma, new numbness or tingling, unexplained
+              weakness or loss of control, radiating symptoms, significant
+              swelling or visible deformity, dizziness or fainting, chest or
+              breathing symptoms, or a rapidly worsening problem.
             </Text>
             <Text style={[styles.body, { color: colors.text }]}>
-              Stop aggravating movement and use appropriate professional or
-              urgent care when needed. Acknowledging this message never bypasses
-              the structured safety check that runs before routine generation.
+              Stop any movement that makes symptoms worse and seek appropriate
+              care when needed. Restore will still check your current symptoms
+              before preparing a routine.
             </Text>
           </Card>
           <Pressable
-            accessibilityHint="Required to complete onboarding. This does not bypass safety checks."
+            accessibilityHint="Required to finish setup. This does not bypass safety checks."
             accessibilityLabel="I understand Restore’s safety boundary"
             accessibilityRole="checkbox"
             accessibilityState={{ checked: input.safetyAcknowledged }}
@@ -583,12 +398,11 @@ export function OnboardingProfileScreen({
           </Pressable>
           <Card>
             <Text style={[styles.cardTitle, { color: colors.text }]}>
-              Reminders come later
+              Reminders are optional
             </Text>
             <Text style={[styles.body, { color: colors.textMuted }]}>
-              Restore will not request notification permission during
-              onboarding. Reminder controls arrive with the local scheduling
-              milestone.
+              Restore will only ask for notification access when you choose to
+              set a reminder. Nothing is requested during setup.
             </Text>
           </Card>
           {errorMessage ? (
@@ -650,9 +464,6 @@ const styles = StyleSheet.create({
   choiceList: {
     gap: spacing.sm,
   },
-  regionGroup: {
-    gap: spacing.sm,
-  },
   sectionTitle: {
     fontSize: typography.title,
     fontWeight: '700',
@@ -673,33 +484,15 @@ const styles = StyleSheet.create({
   choiceStatus: {
     fontSize: typography.caption,
   },
-  reorderItem: {
-    gap: spacing.xs,
-  },
-  reorderRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  orderText: {
+  note: {
     fontSize: typography.label,
+    lineHeight: 21,
   },
-  reorderButton: {
-    alignItems: 'center',
-    borderRadius: radius.pill,
-    borderWidth: StyleSheet.hairlineWidth,
-    justifyContent: 'center',
-    flex: 1,
-    minHeight: 48,
-    minWidth: 72,
-    paddingHorizontal: spacing.sm,
+  trainingGroups: {
+    gap: spacing.lg,
   },
-  reorderLabel: {
-    fontSize: typography.caption,
-    fontWeight: '700',
-  },
-  sideControl: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
+  trainingGroup: {
+    gap: spacing.sm,
   },
   acknowledgement: {
     borderRadius: radius.md,

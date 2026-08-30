@@ -23,14 +23,14 @@ export default function SettingsScreen() {
       </View>
       <Card>
         <Text style={[styles.cardTitle, { color: colors.text }]}>
-          Your profile
+          Your preferences
         </Text>
         <Text style={[styles.body, { color: colors.textMuted }]}>
-          Review goals, body areas, equipment, training, preferred times, and
-          the current safety acknowledgement stored on this iPhone.
+          Update your goals, focus areas, available equipment, usual training,
+          and preferred routine lengths.
         </Text>
         <Button
-          accessibilityHint="Opens the locally stored onboarding profile for editing."
+          accessibilityHint="Opens your profile preferences."
           label="Edit profile"
           onPress={() => router.push('/profile')}
           variant="secondary"

@@ -9,12 +9,14 @@ import { useRestoreTheme } from '@/design-system/use-theme';
 type PlaceholderScreenProps = {
   eyebrow: string;
   title: string;
+  cardTitle: string;
   description: string;
 };
 
 export function PlaceholderScreen({
   eyebrow,
   title,
+  cardTitle,
   description,
 }: PlaceholderScreenProps) {
   const { colors } = useRestoreTheme();
@@ -33,7 +35,7 @@ export function PlaceholderScreen({
 
       <Card>
         <Text style={[styles.cardTitle, { color: colors.text }]}>
-          Foundation ready
+          {cardTitle}
         </Text>
         <Text style={[styles.body, { color: colors.textMuted }]}>
           {description}
