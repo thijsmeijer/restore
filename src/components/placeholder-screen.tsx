@@ -22,7 +22,7 @@ export function PlaceholderScreen({
   return (
     <Screen testID={`${title.toLowerCase()}-screen`}>
       <View style={styles.heading}>
-        <Badge accessibilityLabel="Phase 1 application shell" label={eyebrow} />
+        <Badge accessibilityLabel={`${eyebrow} status`} label={eyebrow} />
         <Text
           accessibilityRole="header"
           style={[styles.title, { color: colors.text }]}

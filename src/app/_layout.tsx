@@ -1,4 +1,4 @@
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -6,6 +6,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppErrorBoundary } from '@/components/app-error-boundary';
 import { RestoreDatabaseProvider } from '@/db/database-provider';
 import { colorTokens } from '@/design-system/tokens';
+import { ProfileProvider } from '@/features/onboarding/profile-context';
+import { ProfileNavigation } from '@/features/onboarding/profile-navigation';
 
 export default function RootLayout() {
   const scheme = useColorScheme() === 'dark' ? 'dark' : 'light';
@@ -29,9 +31,9 @@ export default function RootLayout() {
               },
             }}
           >
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="(tabs)" />
-            </Stack>
+            <ProfileProvider>
+              <ProfileNavigation />
+            </ProfileProvider>
             <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
           </ThemeProvider>
         </SafeAreaProvider>

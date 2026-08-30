@@ -36,6 +36,32 @@ Single local owner record:
 Goals and preferences are mutable. Historical routines store the relevant
 profile input snapshot, so profile edits never reinterpret old results.
 
+### `profile_goals`
+
+- `id`, `user_profile_id`, canonical goal slug, and zero-based priority order.
+- Unique per profile/goal and profile/order pair.
+
+The P0 goal slugs are `move_better`, `reduce_stiffness`,
+`prepare_for_calisthenics`, `improve_posture`, `wind_down`, and
+`maintain_joints`.
+
+### `profile_body_regions`
+
+- `id`, `user_profile_id`, canonical selectable body-region slug, and allowed
+  side.
+- Unique per profile/region; `bilateral` remains one selection rather than two
+  inferred rows.
+
+This optional baseline records an area the owner wants Restore to consider. It
+does not store a diagnosis or silently create a symptom rating.
+
+### `profile_training_split`
+
+- `id`, `user_profile_id`, canonical training type, and zero-based order.
+- Unique per profile/type and profile/order pair.
+
+The onboarding inventory uses the same P0 training types as training sessions.
+
 ### `equipment`
 
 - Stable `id`, unique `slug`, display-name key, category, active flag.
@@ -46,6 +72,10 @@ profile input snapshot, so profile edits never reinterpret old results.
 - `id`, `equipment_id`, environment slug, available flag, optional local note,
   timestamps.
 - Unique per equipment/environment pair.
+
+ONB-001 records selected inventory against the `home` environment. CHK-001 owns
+the per-check-in environment and active-equipment snapshot; onboarding never
+assumes home equipment is available elsewhere.
 
 ### `body_regions`
 

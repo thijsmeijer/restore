@@ -46,7 +46,7 @@ describe('database migrations', () => {
     await expect(
       new SQLiteSchemaMetadataRepository(database).get(),
     ).resolves.toMatchObject({
-      schemaVersion: 1,
+      schemaVersion: 2,
       migrationState: 'idle',
       lastIntegrityResult: 'ok',
       updatedAt: timestamp,
@@ -58,16 +58,16 @@ describe('database migrations', () => {
 
     expect(result).toEqual({
       fromVersion: 0,
-      toVersion: 1,
-      appliedMigrationIds: ['0001_schema_lifecycle'],
+      toVersion: 2,
+      appliedMigrationIds: ['0001_schema_lifecycle', '0002_user_profile'],
     });
     await expect(
       new SQLiteSchemaMetadataRepository(database).get(),
     ).resolves.toEqual({
-      schemaVersion: 1,
+      schemaVersion: 2,
       contentVersion: null,
       migrationState: 'idle',
-      lastSuccessfulMigrationId: '0001_schema_lifecycle',
+      lastSuccessfulMigrationId: '0002_user_profile',
       lastMigratedAt: timestamp,
       lastSuccessfulBackupId: null,
       lastSuccessfulBackupChecksum: null,
@@ -91,6 +91,17 @@ describe('database migrations', () => {
         checksum: migrations[0]?.checksum,
         failureReasonCode: null,
       },
+      {
+        migrationId: '0002_user_profile',
+        fromSchemaVersion: 1,
+        toSchemaVersion: 2,
+        startedAt: timestamp,
+        completedAt: timestamp,
+        backupId: null,
+        status: 'completed',
+        checksum: migrations[1]?.checksum,
+        failureReasonCode: null,
+      },
     ]);
   });
 
@@ -100,13 +111,13 @@ describe('database migrations', () => {
     await expect(
       runMigrations(database, migrations, () => timestamp),
     ).resolves.toEqual({
-      fromVersion: 1,
-      toVersion: 1,
+      fromVersion: 2,
+      toVersion: 2,
       appliedMigrationIds: [],
     });
     await expect(
       new SQLiteMigrationHistoryRepository(database).list(),
-    ).resolves.toHaveLength(1);
+    ).resolves.toHaveLength(2);
   });
 
   it('rolls back an interrupted migration so startup can retry from the prior version', async () => {
@@ -135,12 +146,12 @@ describe('database migrations', () => {
       runMigrations(database, migrations, () => timestamp),
     ).resolves.toMatchObject({
       fromVersion: 0,
-      toVersion: 1,
+      toVersion: 2,
     });
   });
 
   it('stops when the on-device schema is newer than this app supports', async () => {
-    await database.execAsync('PRAGMA user_version = 2');
+    await database.execAsync('PRAGMA user_version = 3');
 
     await expect(
       runMigrations(database, migrations, () => timestamp),
@@ -155,9 +166,9 @@ describe('database migrations', () => {
       'CREATE TABLE owner_data_probe (id INTEGER PRIMARY KEY)',
     ];
     const ownerDataMigration: Migration = {
-      id: '0002_owner_data_probe',
-      fromVersion: 1,
-      toVersion: 2,
+      id: '0003_owner_data_probe',
+      fromVersion: 2,
+      toVersion: 3,
       checksum: checksum(ownerDataMigrationStatements),
       affectsOwnerData: true,
       statements: ownerDataMigrationStatements,
@@ -174,12 +185,29 @@ describe('database migrations', () => {
     });
     await expect(
       database.getFirstAsync<{ user_version: number }>('PRAGMA user_version'),
-    ).resolves.toEqual({ user_version: 1 });
+    ).resolves.toEqual({ user_version: 2 });
     await expect(
       database.getFirstAsync<{ name: string }>(
         "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'owner_data_probe'",
       ),
     ).resolves.toBeNull();
+  });
+
+  it('upgrades an initialized schema-one database without a backup because only new profile tables are added', async () => {
+    await runMigrations(database, [migrations[0]!], () => timestamp);
+
+    await expect(
+      runMigrations(database, migrations, () => timestamp),
+    ).resolves.toEqual({
+      fromVersion: 1,
+      toVersion: 2,
+      appliedMigrationIds: ['0002_user_profile'],
+    });
+    await expect(
+      database.getFirstAsync<{ name: string }>(
+        "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'user_profiles'",
+      ),
+    ).resolves.toEqual({ name: 'user_profiles' });
   });
 
   it('rejects a non-contiguous or modified migration catalog before applying SQL', async () => {
